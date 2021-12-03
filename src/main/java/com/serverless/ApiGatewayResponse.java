@@ -47,4 +47,18 @@ public class ApiGatewayResponse {
                 .headers(Collections.singletonMap("RequestId", context.getAwsRequestId()))
                 .build();
     }
+
+    public static ApiGatewayResponse createSuccessResponse(final Object object, final Context context) {
+        String objectAsString;
+        try {
+            objectAsString = objectMapper.writeValueAsString(object);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize error response.", e);
+        }
+        return ApiGatewayResponse.builder()
+                .body(objectAsString)
+                .statusCode(200)
+                .headers(Collections.singletonMap("RequestId", context.getAwsRequestId()))
+                .build();
+    }
 }

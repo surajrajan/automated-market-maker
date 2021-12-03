@@ -25,7 +25,7 @@ provider:
 
 # you can add packaging information here
 package:
-  artifact: build/distributions/AutomatedMarketMaker.zip
+  artifact: build/distributions/automated-market-maker.zip
 
 functions:
   # Creates a liquidity pool
@@ -33,8 +33,15 @@ functions:
     handler: com.api.handler.pool.CreateLiquidityPoolHandler
     events:
       - http:
-          path: pool
+          path: /pool
           method: post
+  # Gets a liquidity pool
+  getLiquidityPool:
+    handler: com.api.handler.pool.GetLiquidityPoolHandler
+    events:
+      - http:
+          path: /pool/{liquidityPoolName}
+          method: get
 
 
 #    Define function environment variables here

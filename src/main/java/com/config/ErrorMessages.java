@@ -13,4 +13,6 @@ public class ErrorMessages {
     public static String DUPLICATE_ASSET = "Two different assets must be provided.";
     public static String INVALID_REQUEST_MISSING_FIELDS = "One or more fields missing for this request.";
     public static String LIQUIDITY_POOL_ALREADY_EXISTS = "Liquidity pool for this pair already exists.";
+    public static String INVALID_LIQUIDITY_POOL_NAME = "Liquidity pool does not exist.";
+    public static String UNEQUAL_MARKET_CAP_LIQUIDITY_UPDATE = "Market caps of coins are unequal in this update.";
 }

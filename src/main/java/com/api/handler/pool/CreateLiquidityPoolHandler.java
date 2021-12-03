@@ -40,6 +40,7 @@ public class CreateLiquidityPoolHandler implements RequestHandler<CreateLiquidit
         try {
             validateAssetInfo(input.getAssetOne());
             validateAssetInfo(input.getAssetTwo());
+            validateEqualMarketCap(input.getAssetOne(), input.getAssetTwo());
             assetInfoList = order(input.getAssetOne(), input.getAssetTwo());
         } catch (IllegalArgumentException e) {
             log.error(e.getMessage(), e);
@@ -111,6 +112,14 @@ public class CreateLiquidityPoolHandler implements RequestHandler<CreateLiquidit
         if (assetInfo.getInitialSupply() < ServiceLimits.MIN_SUPPLY
                 || assetInfo.getInitialSupply() > ServiceLimits.MAX_SUPPLY) {
             throw new IllegalArgumentException(ErrorMessages.INVALID_SUPPLY_RANGE);
+        }
+    }
+
+    private void validateEqualMarketCap(final CreateLiquidityPoolRequest.AssetInfo assetOne,
+                                        final CreateLiquidityPoolRequest.AssetInfo assetTwo) {
+        if (assetOne.getInitialPrice() * assetOne.getInitialSupply() !=
+                assetTwo.getInitialPrice() * assetTwo.getInitialSupply()) {
+            throw new IllegalArgumentException(ErrorMessages.UNEQUAL_MARKET_CAP_LIQUIDITY_UPDATE);
         }
     }
 

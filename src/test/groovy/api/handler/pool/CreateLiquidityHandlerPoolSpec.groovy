@@ -16,8 +16,8 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
     def dynamoDBClient = Mock(DynamoDBClient)
 
     private static CreateLiquidityPoolHandler.CreateLiquidityPoolRequest request;
-    private Integer someValidSupply = 100000
-    private Integer someValidPrice = 1000
+    private Integer someValidSupply = 100
+    private Integer someValidPrice = 10
     private String someValidAssetOne = "Apples"
     private String someValidAssetTwo = "Bananas"
     @Subject
@@ -49,7 +49,7 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         1 * dynamoDBClient.saveLiquidityPool(_) >> { LiquidityPool liquidityPool ->
             assertLiquidityPool(liquidityPool)
         }
-        response.getStatusCode() == 204
+        assert response.getStatusCode() == 204
     }
 
     def "given valid inputs reverse order should call dynamoDB to save"() {
@@ -64,7 +64,7 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         1 * dynamoDBClient.saveLiquidityPool(_) >> { LiquidityPool liquidityPool ->
             assertLiquidityPool(liquidityPool)
         }
-        response.getStatusCode() == 204
+        assert response.getStatusCode() == 204
     }
 
     @Unroll
@@ -79,8 +79,8 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(request, context)
 
         then:
-        response.getStatusCode() == 400
-        response.getBody().contains(expectedMessage) == true
+        assert response.getStatusCode() == 400
+        assert response.getBody().contains(expectedMessage) == true
 
         where:
         errorType              | assetNameOne | assetNameTwo | price | supply | expectedMessage
@@ -88,7 +88,8 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         "invalid name"         | "blah"       | "blah "      | 10    | 10     | ErrorMessages.INVALID_ASSET_NAME
         "invalid price"        | "Apples"     | "Bananas"    | -100  | 100    | ErrorMessages.INVALID_PRICE_RANGE
         "invalid supply"       | "Apples"     | "Bananas"    | 10    | -100   | ErrorMessages.INVALID_SUPPLY_RANGE
-        "duplicate asset name" | "Apples"     | "Apples"     | 10    | 10     | ErrorMessages.DUPLICATE_ASSET
+        "duplicate asset name" | "Apples"     | "Apples"     | 10    | 100    | ErrorMessages.DUPLICATE_ASSET
+        "unequal market cap"   | "Apples"     | "Bananas"    | 10    | 10     | ErrorMessages.UNEQUAL_MARKET_CAP_LIQUIDITY_UPDATE
     }
 
     def "given db client throws illegal argument exception, should throw bad request exception"() {
@@ -99,7 +100,7 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         dynamoDBClient.saveLiquidityPool(_) >> {
             throw new IllegalArgumentException();
         }
-        response.getStatusCode() == 400
+        assert response.getStatusCode() == 400
     }
 
     void assertLiquidityPool(final LiquidityPool liquidityPool) {
