@@ -11,6 +11,10 @@
 *.war
 *.ear
 
+*.iml
+.idea*
+.DS_Store
+
 # Serverless directories
 .serverless
 
