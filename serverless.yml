@@ -1,0 +1,58 @@
+# Primary serverless.yml file for AutomatedMarketMaker.
+#
+# More documentation:
+#    docs.serverless.com
+
+service: AutomatedMarketMaker
+
+provider:
+  name: aws
+  runtime: java11
+  lambdaHashingVersion: 20201221
+  stage: dev
+  region: us-east-1
+
+  iamRoleStatements:
+    # DynamoDB Access
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:*"
+      Resource: "*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+package:
+  artifact: build/distributions/AutomatedMarketMaker.zip
+
+functions:
+  # Creates a liquidity pool
+  createLiquidityPool:
+    handler: com.api.handler.pool.CreateLiquidityPoolHandler
+    events:
+      - http:
+          path: pool
+          method: post
+
+
+#    Define function environment variables here
+#    environment:
+#      variable2: value2
+
+resources:
+  Resources:
+    LiquidityPoolsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: AutomatedMarketMaker-dev-LiquidityPools
+        AttributeDefinitions:
+          - AttributeName: liquidityPoolName
+            AttributeType: S
+        KeySchema:
+          - AttributeName: liquidityPoolName
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
