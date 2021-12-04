@@ -44,17 +44,27 @@ class GetLiquidityHandlerPoolSpec extends Specification {
         assert response.getStatusCode() == 200
     }
 
-    def "given invalid key should throw bad request"() {
-        given:
-
+    def "given dynamo throws illegal argument should throw bad request"() {
         when:
         ApiGatewayResponse response = getLiquidityPoolHandler.handleRequest(request, context)
 
         then:
         1 * dynamoDBClient.loadLiquidityPool(someValidLiquidityPoolName) >> {
-            return null
+            throw new IllegalArgumentException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME)
         }
         assert response.getStatusCode() == 400
-        assert response.getBody().contains(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME)
+        assert response.getBody().contains(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME) == true
+    }
+
+    def "given input contains no name should throw bad request"() {
+        given:
+        request = new HashMap<>()
+        when:
+        ApiGatewayResponse response = getLiquidityPoolHandler.handleRequest(request, context)
+
+        then:
+        0 * dynamoDBClient.loadLiquidityPool(_)
+        assert response.getStatusCode() == 400
+        assert response.getBody().contains(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS) == true
     }
 }

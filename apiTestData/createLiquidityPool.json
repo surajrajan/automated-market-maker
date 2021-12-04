@@ -1,12 +1,12 @@
 {
   "assetOne": {
-    "name": "Potatoes",
+    "name": "Apples",
     "initialPrice": 100,
-    "initialSupply": 5000
+    "initialSupply": 50000
   },
   "assetTwo": {
-    "name": "Tomatoes",
-    "initialPrice": 200,
-    "initialSupply": 2500
+    "name": "Bananas",
+    "initialPrice": 100,
+    "initialSupply": 50000
   }
 }

@@ -3,7 +3,7 @@
 An automated market maker is a type of market.
 
 This project simulates an automated market maker by allowing users to create liquidity pools between arbitrary assets,
-place trades / swaps between assets and observe price action.
+place trades / swaps between assets and observe price action as trades are made.
 
 ## Example
 
@@ -25,4 +25,9 @@ sls invoke --function createLiquidityPool --path apiTestData/createLiquidityPool
 **GetLiquidityPool:**
 ```
 sls invoke --function getLiquidityPool --path apiTestData/getLiquidityPool.json
+```
+
+**EstimateSwap:**
+```
+ sls invoke --function estimateSwap --path apiTestData/estimateSwap.json
 ```

@@ -2,7 +2,7 @@ package com.api.handler.pool;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.client.dynamodb.DaggerAppDependencies;
+import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.config.ErrorMessages;
 import com.model.LiquidityPool;
@@ -24,9 +24,9 @@ public class GetLiquidityPoolHandler implements RequestHandler<Map<String, Objec
 
     @Override
     public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
-        String liquidityPoolName = extractLiquidityPoolNameFromPathParam(input);
-
+        log.info("Received request: {}", input);
         try {
+            String liquidityPoolName = extractLiquidityPoolNameFromPathParam(input);
             LiquidityPool liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
             if (liquidityPool == null) {
                 return ApiGatewayResponse.createBadRequest(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME, context);
@@ -36,17 +36,18 @@ public class GetLiquidityPoolHandler implements RequestHandler<Map<String, Objec
         } catch (IllegalArgumentException e) {
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
         }
-
     }
 
     private String extractLiquidityPoolNameFromPathParam(final Map<String, Object> input) {
         try {
             Map<String, String> pathParameters = (Map<String, String>) input.get("pathParameters");
             String liquidityPoolName = pathParameters.get("liquidityPoolName");
+            if (liquidityPoolName == null) {
+                throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
+            }
             return liquidityPoolName;
         } catch (Exception e) {
             throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
         }
     }
-
 }

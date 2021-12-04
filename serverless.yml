@@ -43,6 +43,14 @@ functions:
           path: /pool/{liquidityPoolName}
           method: get
 
+  # Estimates a swap
+  estimateSwap:
+    handler: com.api.handler.swap.EstimateSwapHandler
+    events:
+      - http:
+          path: /swap/estimate
+          method: post
+
 
 #    Define function environment variables here
 #    environment:

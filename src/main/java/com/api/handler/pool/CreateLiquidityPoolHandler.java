@@ -2,7 +2,7 @@ package com.api.handler.pool;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.client.dynamodb.DaggerAppDependencies;
+import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.config.ErrorMessages;
 import com.config.ServiceConstants;

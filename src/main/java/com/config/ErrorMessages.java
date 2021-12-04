@@ -15,4 +15,7 @@ public class ErrorMessages {
     public static String LIQUIDITY_POOL_ALREADY_EXISTS = "Liquidity pool for this pair already exists.";
     public static String INVALID_LIQUIDITY_POOL_NAME = "Liquidity pool does not exist.";
     public static String UNEQUAL_MARKET_CAP_LIQUIDITY_UPDATE = "Market caps of coins are unequal in this update.";
+    public static String NOT_ENOUGH_LIQUIDITY = "Not enough liquidity / supply to make this swap.";
+    public static String NEGATIVE_AMOUNT_TO_SWAP = "Positive number must be provided for amount to swap.";
+
 }
