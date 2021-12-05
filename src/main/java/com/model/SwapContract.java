@@ -14,11 +14,9 @@ import java.util.Date;
 @Builder
 @DynamoDBDocument
 public class SwapContract {
-    private String assetNameIn;
-    private Double assetPriceIn;
-    private Double assetAmountIn;
-    private String assetNameOut;
-    private Double assetPriceOut;
-    private Double assetAmountOut;
+    private String inName;
+    private AssetAmount inAssetAmount;
+    private String outName;
+    private AssetAmount outAssetAmount;
     private Date expiresAt;
 }

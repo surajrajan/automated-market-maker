@@ -19,8 +19,8 @@ public class Transaction {
     @DynamoDBHashKey(attributeName = DBConstants.TRANSACTION_ID_KEY)
     private String transactionId;
     private String transactionState;
-    private LiquidityPool before;
-    private LiquidityPool after;
+    private LiquidityPool beforeState;
+    private LiquidityPool afterState;
     private SwapContract swapContract;
     private Date timeStarted;
     private Date timeCompleted;

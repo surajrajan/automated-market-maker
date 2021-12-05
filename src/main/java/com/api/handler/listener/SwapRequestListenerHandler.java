@@ -54,7 +54,7 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
         final String transactionId = swapRequest.getTransactionId();
         log.info("Processing transactionId: {}", transactionId);
         String liquidityPoolName = LiquidityPoolUtil
-                .getLiquidityPoolName(swapContract.getAssetNameIn(), swapContract.getAssetNameOut());
+                .getLiquidityPoolName(swapContract.getInName(), swapContract.getOutName());
         final LiquidityPool liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
 
         // determine updated pool if swap is handled
@@ -65,8 +65,8 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
         final Transaction transaction = new Transaction();
         transaction.setTransactionId(transactionId);
         transaction.setTransactionState("Completed");
-        transaction.setBefore(liquidityPool);
-        transaction.setAfter(newLiquidityPool);
+        transaction.setBeforeState(liquidityPool);
+        transaction.setAfterState(newLiquidityPool);
         transaction.setSwapContract(swapContract);
         transaction.setTimeCompleted(now);
 

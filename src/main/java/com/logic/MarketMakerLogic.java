@@ -37,13 +37,16 @@ public class MarketMakerLogic {
         AssetAmount newAssetAmountOne = new AssetAmount();
         AssetAmount newAssetAmountTwo = new AssetAmount();
 
+        AssetAmount inAssetAmount = swapContract.getInAssetAmount();
+        AssetAmount outAssetAmount = swapContract.getOutAssetAmount();
+
         // depending on order, swap the supply
-        if (swapContract.getAssetNameIn().equals(assetNameOne)) {
-            newAssetAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() + swapContract.getAssetAmountIn());
-            newAssetAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() - swapContract.getAssetAmountOut());
+        if (swapContract.getInName().equals(assetNameOne)) {
+            newAssetAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() + inAssetAmount.getAmount());
+            newAssetAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() - outAssetAmount.getAmount());
         } else {
-            newAssetAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() - swapContract.getAssetAmountOut());
-            newAssetAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() + swapContract.getAssetAmountIn());
+            newAssetAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() - outAssetAmount.getAmount());
+            newAssetAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() + inAssetAmount.getAmount());
         }
         newAssetAmountOne.setPrice(constantMarketCapOne / liquidityPool.getAssetOne().getAmount());
         newAssetAmountTwo.setPrice(constantMarketCapOne / liquidityPool.getAssetTwo().getAmount());
@@ -81,12 +84,16 @@ public class MarketMakerLogic {
 
         Date expiresAt = DateTime.now().plusSeconds(SWAP_EXPIRY_IN_SECONDS).toDate();
         SwapContract swapContract = SwapContract.builder()
-                .assetNameIn(request.getAssetNameIn())
-                .assetAmountIn(request.getAssetAmountIn())
-                .assetPriceIn(inPrice)
-                .assetNameOut(request.getAssetNameOut())
-                .assetAmountOut(assetAmountOut)
-                .assetPriceOut(assetOutNewPrice)
+                .inName(request.getAssetNameIn())
+                .inAssetAmount(AssetAmount.builder()
+                        .amount(request.getAssetAmountIn())
+                        .price(inPrice)
+                        .build())
+                .outName(request.getAssetNameOut())
+                .outAssetAmount(AssetAmount.builder()
+                        .amount(assetAmountOut)
+                        .price(assetOutNewPrice)
+                        .build())
                 .expiresAt(expiresAt)
                 .build();
         return swapContract;

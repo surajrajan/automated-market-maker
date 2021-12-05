@@ -74,8 +74,8 @@ class EstimateSwapHandlerSpec extends Specification {
         assert response.getBody().contains(someValidEncryptedClaim)
         final EstimateSwapHandler.EstimateSwapResponse estimateSwapResponse = toResponse(response.getBody())
         final SwapContract swapContract = estimateSwapResponse.getSwapContract()
-        assert swapContract.getAssetNameIn() == inAsset
-        assert swapContract.getAssetNameOut() == outAsset
+        assert swapContract.getInName() == inAsset
+        assert swapContract.getOutName() == outAsset
         validateSwapContract(swapContract)
 
         where:
@@ -114,10 +114,10 @@ class EstimateSwapHandlerSpec extends Specification {
      * @param swapContract
      */
     private void validateSwapContract(final SwapContract swapContract) {
-        assert swapContract.getAssetAmountIn() == someValidAmountToSwap
-        assert swapContract.getAssetPriceIn() == someValidPrice
+        assert swapContract.getInAssetAmount().getAmount() == someValidAmountToSwap
+        assert swapContract.getInAssetAmount().getPrice() == someValidPrice
         final inValue = someValidAmountToSwap * someValidPrice
-        final outValue = swapContract.getAssetPriceOut() * swapContract.getAssetAmountOut()
+        final outValue = swapContract.getOutAssetAmount().getPrice() * swapContract.getOutAssetAmount().getAmount()
         assert Math.abs(inValue - outValue) < 0.01
     }
 }
