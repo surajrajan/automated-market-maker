@@ -6,13 +6,12 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
 import com.config.ErrorMessages;
 import com.model.LiquidityPool;
-import com.model.SwapContract;
+import com.model.Transaction;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @AllArgsConstructor
 @Slf4j
@@ -48,9 +47,12 @@ public class DynamoDBClient {
         }
     }
 
-    public String putPendingTransaction(final SwapContract swapContract) {
-        String transactionId = UUID.randomUUID().toString();
+    public void saveTransaction(final Transaction transaction) {
+        dynamoDBMapper.save(transaction);
+    }
 
-        return transactionId;
+    public void writeTransaction(final Transaction transaction, final LiquidityPool newLiquidityPool) {
+        dynamoDBMapper.save(transaction);
+        dynamoDBMapper.save(newLiquidityPool);
     }
 }

@@ -18,6 +18,16 @@ provider:
       Action:
         - "dynamodb:*"
       Resource: "*"
+    # SQS Access
+    - Effect: "Allow"
+      Action:
+        - "sqs:*"
+      Resource: "*"
+    # KMS Access
+    - Effect: "Allow"
+      Action:
+        - "kms:*"
+      Resource: "*"
 
 # you can define service wide environment variables here
 #  environment:
@@ -51,6 +61,30 @@ functions:
           path: /swap/estimate
           method: post
 
+  # Submits a swap
+  submitSwap:
+    handler: com.api.handler.swap.SubmitSwapRequestHandler
+    events:
+      - http:
+          path: /swap/submit
+          method: post
+
+  # Submits a swap
+  swapRequestListener:
+    handler: com.api.handler.listener.SwapRequestListenerHandler
+    events:
+      - sqs:
+          arn:
+            Fn::Join:
+              - ':'
+              - - arn
+                - aws
+                - sqs
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - AutomatedMarketMaker-dev-SwapRequests
+
+
 
 #    Define function environment variables here
 #    environment:
@@ -58,6 +92,8 @@ functions:
 
 resources:
   Resources:
+
+    # DynamoDB Table for LiquidityPools
     LiquidityPoolsTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -71,3 +107,24 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+
+    # DynamoDB Table for Transactions
+    TransactionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: AutomatedMarketMaker-dev-Transactions
+        AttributeDefinitions:
+          - AttributeName: transactionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: transactionId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    # SQS Queue for SwapRequests
+    SwapRequestsQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: AutomatedMarketMaker-dev-SwapRequests

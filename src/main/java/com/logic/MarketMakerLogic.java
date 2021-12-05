@@ -1,48 +1,65 @@
 package com.logic;
 
 import com.api.handler.swap.EstimateSwapHandler;
-import com.model.AssetInfo;
+import com.model.AssetAmount;
 import com.model.LiquidityPool;
 import com.model.SwapContract;
 import com.util.LiquidityPoolUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTime;
 
+import java.util.Date;
 import java.util.Map;
 
 @Slf4j
 public class MarketMakerLogic {
+
+    private static final Integer SWAP_EXPIRY_IN_SECONDS = 90;
 
     /**
      * Given an ordered list of .
      *
      * @param swapContract
      * @param liquidityPool
-     * @param constantMarketCap
      */
-    public static void applySwapToPool(final SwapContract swapContract,
-                                       final LiquidityPool liquidityPool,
-                                       final Double constantMarketCap) {
+    public static LiquidityPool applySwapToPool(final SwapContract swapContract,
+                                                final LiquidityPool liquidityPool) {
+
+        // create a new pool with same new
+        final LiquidityPool newLiquidityPool = new LiquidityPool();
+        newLiquidityPool.setLiquidityPoolName(liquidityPool.getLiquidityPoolName());
+
+        // logic
+        final Double constantMarketCapOne = liquidityPool.getAssetOne().getAmount() * liquidityPool.getAssetOne().getPrice();
         final String assetNames[] = liquidityPool.getLiquidityPoolName().split("-");
         final String assetNameOne = assetNames[0];
+
+        AssetAmount newAssetAmountOne = new AssetAmount();
+        AssetAmount newAssetAmountTwo = new AssetAmount();
+
+        // depending on order, swap the supply
         if (swapContract.getAssetNameIn().equals(assetNameOne)) {
-            liquidityPool.setAssetOneSupply(liquidityPool.getAssetOneSupply() + swapContract.getAssetAmountIn());
-            liquidityPool.setAssetTwoSupply(liquidityPool.getAssetTwoSupply() - swapContract.getAssetAmountOut());
+            newAssetAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() + swapContract.getAssetAmountIn());
+            newAssetAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() - swapContract.getAssetAmountOut());
         } else {
-            liquidityPool.setAssetOneSupply(liquidityPool.getAssetOneSupply() - swapContract.getAssetAmountOut());
-            liquidityPool.setAssetTwoSupply(liquidityPool.getAssetTwoSupply() + swapContract.getAssetAmountIn());
+            newAssetAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() - swapContract.getAssetAmountOut());
+            newAssetAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() + swapContract.getAssetAmountIn());
         }
-        liquidityPool.setAssetOneLocalPrice(constantMarketCap / liquidityPool.getAssetOneSupply());
-        liquidityPool.setAssetTwoLocalPrice(constantMarketCap / liquidityPool.getAssetTwoSupply());
+        newAssetAmountOne.setPrice(constantMarketCapOne / liquidityPool.getAssetOne().getAmount());
+        newAssetAmountTwo.setPrice(constantMarketCapOne / liquidityPool.getAssetTwo().getAmount());
+        newLiquidityPool.setAssetOne(newAssetAmountOne);
+        newLiquidityPool.setAssetTwo(newAssetAmountTwo);
+        return newLiquidityPool;
     }
 
     public static SwapContract createSwapContract(final LiquidityPool liquidityPool,
                                                   final EstimateSwapHandler.EstimateSwapRequest request) {
         // create map to access assetName to assetInfo
-        Map<String, AssetInfo> assetAmountList = LiquidityPoolUtil.getAssetNameAssetAmountMap(liquidityPool);
+        Map<String, AssetAmount> assetAmountList = LiquidityPoolUtil.getAssetNameAssetAmountMap(liquidityPool);
 
         // calculate details about asset being swapped in / out
-        AssetInfo assetInInfo = assetAmountList.get(request.getAssetNameIn());
-        AssetInfo assetOutInfo = assetAmountList.get(request.getAssetNameOut());
+        AssetAmount assetInInfo = assetAmountList.get(request.getAssetNameIn());
+        AssetAmount assetOutInfo = assetAmountList.get(request.getAssetNameOut());
         Double inSupply = assetInInfo.getAmount();
         Double inPrice = assetInInfo.getPrice();
         Double outSupply = assetOutInfo.getAmount();
@@ -62,6 +79,7 @@ public class MarketMakerLogic {
         log.info("marketCapBeingSwappedIn: {}, newMarketCapIn: {}, newMarketCapOut: {}, assetAmountOut: {}, assetOutNewPrice: {}",
                 marketCapBeingSwappedIn, newMarketCapIn, newMarketCapOut, assetAmountOut, assetOutNewPrice);
 
+        Date expiresAt = DateTime.now().plusSeconds(SWAP_EXPIRY_IN_SECONDS).toDate();
         SwapContract swapContract = SwapContract.builder()
                 .assetNameIn(request.getAssetNameIn())
                 .assetAmountIn(request.getAssetAmountIn())
@@ -69,6 +87,7 @@ public class MarketMakerLogic {
                 .assetNameOut(request.getAssetNameOut())
                 .assetAmountOut(assetAmountOut)
                 .assetPriceOut(assetOutNewPrice)
+                .expiresAt(expiresAt)
                 .build();
         return swapContract;
     }

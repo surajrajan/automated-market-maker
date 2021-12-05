@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context
 import com.api.handler.pool.GetLiquidityPoolHandler
 import com.client.dynamodb.DynamoDBClient
 import com.config.ErrorMessages
+import com.model.AssetAmount
 import com.model.LiquidityPool
 import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
@@ -15,10 +16,11 @@ class GetLiquidityHandlerPoolSpec extends Specification {
     def dynamoDBClient = Mock(DynamoDBClient)
     private Map<String, Object> request;
     private String someValidLiquidityPoolName = "someValidLiquidityPoolName"
-    private Integer someValidPrice = 10;
-    private Integer someValidSupply = 100;
+    private Integer someValidSupply = 100
+    private Integer someValidPrice = 10
+    private AssetAmount someValidAssetAmount = new AssetAmount(someValidSupply, someValidPrice)
     private LiquidityPool someValidLiquidityPool = new LiquidityPool(someValidLiquidityPoolName,
-            someValidPrice, someValidSupply, someValidPrice, someValidSupply);
+            someValidAssetAmount, someValidAssetAmount);
 
     @Subject
     GetLiquidityPoolHandler getLiquidityPoolHandler

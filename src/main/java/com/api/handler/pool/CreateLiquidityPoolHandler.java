@@ -7,6 +7,7 @@ import com.client.dynamodb.DynamoDBClient;
 import com.config.ErrorMessages;
 import com.config.ServiceConstants;
 import com.config.ServiceLimits;
+import com.model.AssetAmount;
 import com.model.LiquidityPool;
 import com.serverless.ApiGatewayResponse;
 import lombok.Data;
@@ -51,12 +52,18 @@ public class CreateLiquidityPoolHandler implements RequestHandler<CreateLiquidit
         String liquidityPoolName = MessageFormat.format("{0}-{1}",
                 assetInfoList.get(0).getName(), assetInfoList.get(1).getName());
         log.info("Inputs valid. Creating pool with name: {}", liquidityPoolName);
+        CreateLiquidityPoolRequest.AssetInfo assetOne = assetInfoList.get(0);
+        CreateLiquidityPoolRequest.AssetInfo assetTwo = assetInfoList.get(1);
         LiquidityPool liquidityPool = LiquidityPool.builder()
                 .liquidityPoolName(liquidityPoolName)
-                .assetOneSupply(assetInfoList.get(0).getInitialSupply())
-                .assetTwoSupply(assetInfoList.get(1).getInitialSupply())
-                .assetOneLocalPrice(assetInfoList.get(0).getInitialPrice())
-                .assetTwoLocalPrice(assetInfoList.get(1).getInitialPrice())
+                .assetOne(AssetAmount.builder()
+                        .amount(assetOne.getInitialSupply())
+                        .price(assetOne.getInitialPrice())
+                        .build())
+                .assetTwo(AssetAmount.builder()
+                        .amount(assetTwo.getInitialSupply())
+                        .price(assetTwo.getInitialPrice())
+                        .build())
                 .build();
 
         // save into dynamoDB

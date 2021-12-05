@@ -105,9 +105,9 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
 
     void assertLiquidityPool(final LiquidityPool liquidityPool) {
         assert liquidityPool.getLiquidityPoolName() == (someValidAssetOne + "-" + someValidAssetTwo)
-        assert liquidityPool.getAssetOneLocalPrice() == someValidPrice
-        assert liquidityPool.getAssetTwoLocalPrice() == someValidPrice
-        assert liquidityPool.getAssetOneSupply() == someValidSupply
-        assert liquidityPool.getAssetTwoSupply() == someValidSupply
+        assert liquidityPool.getAssetOne().getPrice() == someValidPrice
+        assert liquidityPool.getAssetTwo().getPrice() == someValidPrice
+        assert liquidityPool.getAssetOne().getAmount() == someValidSupply
+        assert liquidityPool.getAssetTwo().getAmount() == someValidSupply
     }
 }

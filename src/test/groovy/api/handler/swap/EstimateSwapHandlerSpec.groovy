@@ -3,9 +3,10 @@ package api.handler.swap
 import com.amazonaws.services.lambda.runtime.Context
 import com.api.handler.swap.EstimateSwapHandler
 import com.client.dynamodb.DynamoDBClient
-import com.client.jwt.JWTClient
+import com.client.kms.KMSClient
 import com.config.ErrorMessages
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.model.AssetAmount
 import com.model.LiquidityPool
 import com.model.SwapContract
 import com.serverless.ApiGatewayResponse
@@ -19,12 +20,12 @@ class EstimateSwapHandlerSpec extends Specification {
     private static Double someValidAmountToSwap = 5000
     private static String someValidAssetOne = "Apples"
     private static String someValidAssetTwo = "Bananas"
-    private static String someValidJwtClaim = "someValidJwtClaim"
+    private static String someValidEncryptedClaim = "someValidJwtClaim"
     private static String someValidLiquidityPoolName = "Apples-Bananas"
 
     def context = Mock(Context)
     def dynamoDBClient = Mock(DynamoDBClient)
-    def jwtClient = Mock(JWTClient)
+    def kmsClient = Mock(KMSClient)
 
     def objectMapper = new ObjectMapper()
 
@@ -32,24 +33,26 @@ class EstimateSwapHandlerSpec extends Specification {
     EstimateSwapHandler estimateSwapHandler
 
     EstimateSwapHandler.EstimateSwapRequest request;
-    LiquidityPool liquidityPool;
+    LiquidityPool liquidityPool
 
     def setup() {
-        estimateSwapHandler = new EstimateSwapHandler();
-        estimateSwapHandler.setDynamoDBClient(dynamoDBClient);
-        estimateSwapHandler.setJwtClient(jwtClient)
+        estimateSwapHandler = new EstimateSwapHandler()
+        estimateSwapHandler.setDynamoDBClient(dynamoDBClient)
+        estimateSwapHandler.setKmsClient(kmsClient)
 
-        request = new EstimateSwapHandler.EstimateSwapRequest();
+        request = new EstimateSwapHandler.EstimateSwapRequest()
         request.setAssetNameIn(someValidAssetOne)
         request.setAssetNameOut(someValidAssetTwo)
         request.setAssetAmountIn(someValidAmountToSwap)
 
-        liquidityPool = new LiquidityPool();
+        liquidityPool = new LiquidityPool()
         liquidityPool.setLiquidityPoolName(someValidLiquidityPoolName)
-        liquidityPool.setAssetOneSupply(someValidSupply)
-        liquidityPool.setAssetOneLocalPrice(someValidPrice)
-        liquidityPool.setAssetTwoSupply(someValidSupply)
-        liquidityPool.setAssetTwoLocalPrice(someValidPrice)
+
+        AssetAmount someValidAssetAmount = new AssetAmount()
+        someValidAssetAmount.setAmount(someValidSupply)
+        someValidAssetAmount.setPrice(someValidPrice)
+        liquidityPool.setAssetOne(someValidAssetAmount)
+        liquidityPool.setAssetTwo(someValidAssetAmount)
     }
 
     def "given valid request (#type) should return valid swap contract"() {
@@ -64,11 +67,11 @@ class EstimateSwapHandlerSpec extends Specification {
         1 * dynamoDBClient.loadLiquidityPool(someValidLiquidityPoolName) >> {
             return liquidityPool
         }
-        1 * jwtClient.getJwtClaim(_, _) >> {
-            return someValidJwtClaim
+        1 * kmsClient.encrypt(_) >> {
+            return someValidEncryptedClaim
         }
         assert response.getStatusCode() == 200
-        assert response.getBody().contains(someValidJwtClaim)
+        assert response.getBody().contains(someValidEncryptedClaim)
         final EstimateSwapHandler.EstimateSwapResponse estimateSwapResponse = toResponse(response.getBody())
         final SwapContract swapContract = estimateSwapResponse.getSwapContract()
         assert swapContract.getAssetNameIn() == inAsset

@@ -1,7 +1,7 @@
 package com.util;
 
 import com.config.ErrorMessages;
-import com.model.AssetInfo;
+import com.model.AssetAmount;
 import com.model.LiquidityPool;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,27 +11,24 @@ import java.util.*;
 @Slf4j
 public final class LiquidityPoolUtil {
 
-    public static Map<String, AssetInfo> getAssetNameAssetAmountMap(final LiquidityPool liquidityPool) {
+    public static Map<String, AssetAmount> getAssetNameAssetAmountMap(final LiquidityPool liquidityPool) {
         final String assetNames[] = liquidityPool.getLiquidityPoolName().split("-");
         final String assetNameOne = assetNames[0];
         final String assetNameTwo = assetNames[1];
-        List<AssetInfo> assetInfoList = new ArrayList<>();
-        final AssetInfo assetAmountOne = AssetInfo.builder()
-                .assetName(assetNameOne)
-                .amount(liquidityPool.getAssetOneSupply())
-                .price(liquidityPool.getAssetOneLocalPrice())
+        final AssetAmount assetAmountOne = AssetAmount.builder()
+                .amount(liquidityPool.getAssetOne().getAmount())
+                .price(liquidityPool.getAssetOne().getPrice())
                 .build();
-        final AssetInfo assetAmountTwo = AssetInfo.builder()
-                .assetName(assetNameTwo)
-                .amount(liquidityPool.getAssetTwoSupply())
-                .price(liquidityPool.getAssetTwoLocalPrice())
+        final AssetAmount assetAmountTwo = AssetAmount.builder()
+                .amount(liquidityPool.getAssetTwo().getAmount())
+                .price(liquidityPool.getAssetTwo().getPrice())
                 .build();
-        assetInfoList.add(assetAmountOne);
-        assetInfoList.add(assetAmountTwo);
-        Collections.sort(assetInfoList, Comparator.comparing(AssetInfo::getAssetName));
-        Map<String, AssetInfo> nameToAssetAmountMap = new LinkedHashMap<>();
+
+        // ordered map
+        Map<String, AssetAmount> nameToAssetAmountMap = new TreeMap<>();
         nameToAssetAmountMap.put(assetNameOne, assetAmountOne);
         nameToAssetAmountMap.put(assetNameTwo, assetAmountTwo);
+
         return nameToAssetAmountMap;
     }
 
@@ -47,9 +44,13 @@ public final class LiquidityPoolUtil {
     }
 
     public static void logKValue(final LiquidityPool liquidityPool) {
-        // calculate amount returned
-        final Double constantMarketCap = liquidityPool.getAssetOneSupply() * liquidityPool.getAssetOneLocalPrice();
-        final Double k = constantMarketCap * constantMarketCap;
-        log.info("constantMarketCap: {}, k: {}", constantMarketCap, k);
+        // calculate stats for asset one and asset two
+        final AssetAmount assetAmountOne = liquidityPool.getAssetOne();
+        final AssetAmount assetAmountTwo = liquidityPool.getAssetTwo();
+        final Double constantMarketCapOne = assetAmountOne.getAmount() * assetAmountOne.getPrice();
+        final Double constantMarketCapTwo = assetAmountTwo.getAmount() * assetAmountTwo.getPrice();
+        final Double k = constantMarketCapOne * constantMarketCapOne;
+        log.info("constantMarketCapOne: {}, constantMarketCapOne: {}, k: {}",
+                constantMarketCapOne, constantMarketCapTwo, k);
     }
 }

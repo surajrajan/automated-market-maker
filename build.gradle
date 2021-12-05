@@ -15,8 +15,13 @@ dependencies {
         'com.amazonaws:aws-lambda-java-core:1.2.1',
         'com.amazonaws:aws-lambda-java-runtime-interface-client:2.0.0',
         'com.amazonaws:aws-lambda-java-log4j2:1.2.0',
+        'com.amazonaws:aws-lambda-java-events:3.11.0',
 
         'com.amazonaws:aws-java-sdk-dynamodb:1.12.122',
+        'com.amazonaws:aws-java-sdk-sqs:1.12.122',
+        'com.amazonaws:aws-java-sdk-kms:1.12.122',
+        'com.amazonaws:aws-encryption-sdk-java:2.3.3',
+
         'com.fasterxml.jackson.core:jackson-core:2.13.0',
         'com.fasterxml.jackson.core:jackson-databind:2.13.0',
         'com.fasterxml.jackson.core:jackson-annotations:2.13.0',
@@ -28,9 +33,7 @@ dependencies {
 
         'org.codehaus.groovy:groovy:3.0.8',
 
-        'com.google.dagger:dagger:2.40.3',
-
-        'com.auth0:java-jwt:3.18.2'
+        'com.google.dagger:dagger:2.40.3'
     )
     annotationProcessor(
         'com.google.dagger:dagger-compiler:2.40.3'

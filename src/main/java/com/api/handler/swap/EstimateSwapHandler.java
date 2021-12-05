@@ -4,9 +4,10 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
-import com.client.jwt.JWTClient;
+import com.client.kms.KMSClient;
 import com.config.ErrorMessages;
 import com.config.ServiceConstants;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logic.MarketMakerLogic;
 import com.model.LiquidityPool;
 import com.model.SwapContract;
@@ -15,22 +16,19 @@ import com.util.LiquidityPoolUtil;
 import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
-
-import java.util.Date;
 
 @Slf4j
 @Setter
 public class EstimateSwapHandler implements RequestHandler<EstimateSwapHandler.EstimateSwapRequest, ApiGatewayResponse> {
 
     private DynamoDBClient dynamoDBClient;
-    private JWTClient jwtClient;
+    private KMSClient kmsClient;
 
-    private static final Integer SWAP_EXPIRY_IN_SECONDS = 5;
+    private static ObjectMapper objectMapper = new ObjectMapper();
 
     public EstimateSwapHandler() {
         this.dynamoDBClient = DaggerAppDependencies.builder().build().dynamoDBClient();
-        this.jwtClient = DaggerAppDependencies.builder().build().jwtClient();
+        this.kmsClient = DaggerAppDependencies.builder().build().kmsClient();
     }
 
     @Override
@@ -49,13 +47,21 @@ public class EstimateSwapHandler implements RequestHandler<EstimateSwapHandler.E
         }
 
         // return jwt claim token
-        Date expiresAt = DateTime.now().plusSeconds(SWAP_EXPIRY_IN_SECONDS).toDate();
-        String jwtClaimToken = jwtClient.getJwtClaim(swapContract, expiresAt);
+        String encryptedClaim;
+        try {
+            String swapContractAsString = objectMapper.writeValueAsString(swapContract);
+            log.info("swapContractAsString: {}", swapContractAsString);
+            encryptedClaim = kmsClient.encrypt(swapContractAsString);
+            log.info("encryptedClaim: {}", encryptedClaim);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
+        }
 
         // return success response
         EstimateSwapResponse estimateSwapResponse = new EstimateSwapResponse();
         estimateSwapResponse.setSwapContract(swapContract);
-        estimateSwapResponse.setSwapJwtClaim(jwtClaimToken);
+        estimateSwapResponse.setSwapClaim(encryptedClaim);
         return ApiGatewayResponse.createSuccessResponse(estimateSwapResponse, context);
     }
 
@@ -84,7 +90,7 @@ public class EstimateSwapHandler implements RequestHandler<EstimateSwapHandler.E
 
     @Data
     public static class EstimateSwapResponse {
-        private String swapJwtClaim;
+        private String swapClaim;
         private SwapContract swapContract;
     }
 }
