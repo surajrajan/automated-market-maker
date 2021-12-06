@@ -9,11 +9,11 @@ import dagger.Module;
 import dagger.Provides;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.client.kms.KMSConstants.KEY_ARN;
+
 @Module
 @Slf4j
 public class KMSModule {
-
-    private static final String KEY_ARN = "arn:aws:kms:us-east-1:861060714125:key/bbe2e63b-dfb4-4b55-b77b-12e7666f7b4a";
 
     @Provides
     public AWSKMS awsKMS() {

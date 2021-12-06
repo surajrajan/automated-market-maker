@@ -6,11 +6,11 @@ import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.client.kms.KMSClient;
 import com.config.ErrorMessages;
-import com.config.ServiceConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logic.MarketMakerLogic;
 import com.model.LiquidityPool;
 import com.model.SwapContract;
+import com.model.types.Asset;
 import com.serverless.ApiGatewayResponse;
 import com.util.LiquidityPoolUtil;
 import lombok.Data;
@@ -34,8 +34,8 @@ public class EstimateSwapHandler implements RequestHandler<EstimateSwapHandler.E
     @Override
     public ApiGatewayResponse handleRequest(EstimateSwapRequest input, Context context) {
         log.info("Received request: {}", input);
-        LiquidityPool liquidityPool;
-        SwapContract swapContract;
+        final LiquidityPool liquidityPool;
+        final SwapContract swapContract;
         try {
             validateRequest(input);
             String liquidityPoolName = LiquidityPoolUtil.getLiquidityPoolName(input.getAssetNameIn(), input.getAssetNameOut());
@@ -46,9 +46,9 @@ public class EstimateSwapHandler implements RequestHandler<EstimateSwapHandler.E
         }
 
         // return claim token
-        String encryptedClaim;
+        final String encryptedClaim;
         try {
-            String swapContractAsString = objectMapper.writeValueAsString(swapContract);
+            final String swapContractAsString = objectMapper.writeValueAsString(swapContract);
             log.info("swapContractAsString: {}", swapContractAsString);
             encryptedClaim = kmsClient.encrypt(swapContractAsString);
             log.info("encryptedClaim: {}", encryptedClaim);
@@ -69,7 +69,7 @@ public class EstimateSwapHandler implements RequestHandler<EstimateSwapHandler.E
                 || request.getAssetAmountIn() == null || request.getAssetNameOut() == null) {
             throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
         }
-        if (!ServiceConstants.ALLOWED_ASSETS.contains(request.getAssetNameIn())) {
+        if (!Asset.isValidAssetName(request.getAssetNameIn()) || !Asset.isValidAssetName(request.getAssetNameOut())) {
             throw new IllegalArgumentException(ErrorMessages.INVALID_ASSET_NAME);
         }
         if (request.getAssetAmountIn() < 0) {

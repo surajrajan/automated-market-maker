@@ -26,8 +26,8 @@ public class ApiGatewayResponse {
     }
 
     public static ApiGatewayResponse createBadRequest(final String errorMessage, final Context context) {
-        ErrorResponse errorResponse = ErrorResponse.badRequest(errorMessage);
-        String errorResponseBody;
+        final ErrorResponse errorResponse = ErrorResponse.badRequest(errorMessage);
+        final String errorResponseBody;
         try {
             errorResponseBody = objectMapper.writeValueAsString(errorResponse);
         } catch (Exception e) {
@@ -48,7 +48,7 @@ public class ApiGatewayResponse {
     }
 
     public static ApiGatewayResponse createSuccessResponse(final Object object, final Context context) {
-        String objectAsString;
+        final String objectAsString;
         try {
             objectAsString = objectMapper.writeValueAsString(object);
         } catch (Exception e) {

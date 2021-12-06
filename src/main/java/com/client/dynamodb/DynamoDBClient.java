@@ -8,7 +8,7 @@ import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
 import com.config.ErrorMessages;
 import com.model.LiquidityPool;
 import com.model.Transaction;
-import com.model.TransactionStatus;
+import com.model.types.TransactionStatus;
 import com.util.LiquidityPoolUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

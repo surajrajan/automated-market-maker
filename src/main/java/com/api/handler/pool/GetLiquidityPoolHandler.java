@@ -26,8 +26,8 @@ public class GetLiquidityPoolHandler implements RequestHandler<Map<String, Objec
     public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
         log.info("Received request: {}", input);
         try {
-            String liquidityPoolName = extractLiquidityPoolNameFromPathParam(input);
-            LiquidityPool liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
+            final String liquidityPoolName = extractLiquidityPoolNameFromPathParam(input);
+            final LiquidityPool liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
             if (liquidityPool == null) {
                 return ApiGatewayResponse.createBadRequest(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME, context);
             }
@@ -40,8 +40,8 @@ public class GetLiquidityPoolHandler implements RequestHandler<Map<String, Objec
 
     private String extractLiquidityPoolNameFromPathParam(final Map<String, Object> input) {
         try {
-            Map<String, String> pathParameters = (Map<String, String>) input.get("pathParameters");
-            String liquidityPoolName = pathParameters.get("liquidityPoolName");
+            final Map<String, String> pathParameters = (Map<String, String>) input.get("pathParameters");
+            final String liquidityPoolName = pathParameters.get("liquidityPoolName");
             if (liquidityPoolName == null) {
                 throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
             }

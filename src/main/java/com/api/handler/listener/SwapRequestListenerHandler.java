@@ -12,7 +12,7 @@ import com.model.LiquidityPool;
 import com.model.SwapContract;
 import com.model.SwapRequest;
 import com.model.Transaction;
-import com.model.TransactionStatus;
+import com.model.types.TransactionStatus;
 import com.util.LiquidityPoolUtil;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -29,15 +29,15 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
         this.dynamoDBClient = DaggerAppDependencies.builder().build().dynamoDBClient();
     }
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private static ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public Void handleRequest(SQSEvent sqsEvent, Context context) {
         log.info("Received request: {}", sqsEvent);
-        SwapRequest swapRequest = null;
+        final SwapRequest swapRequest;
         try {
             // only one message at a time
-            String body = sqsEvent.getRecords().get(0).getBody();
+            final String body = sqsEvent.getRecords().get(0).getBody();
             log.info("SQS message body: {}", body);
             swapRequest = objectMapper.readValue(body, SwapRequest.class);
         } catch (JsonProcessingException e) {
@@ -46,10 +46,10 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
         }
 
         // load existing pool
-        SwapContract swapContract = swapRequest.getSwapContract();
+        final SwapContract swapContract = swapRequest.getSwapContract();
         final String transactionId = swapRequest.getTransactionId();
         log.info("Processing transactionId: {}", transactionId);
-        String liquidityPoolName = LiquidityPoolUtil
+        final String liquidityPoolName = LiquidityPoolUtil
                 .getLiquidityPoolName(swapContract.getInName(), swapContract.getOutName());
         final LiquidityPool liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
 

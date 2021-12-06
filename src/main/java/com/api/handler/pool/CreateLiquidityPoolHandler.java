@@ -5,10 +5,10 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.config.ErrorMessages;
-import com.config.ServiceConstants;
 import com.config.ServiceLimits;
 import com.model.AssetAmount;
 import com.model.LiquidityPool;
+import com.model.types.Asset;
 import com.serverless.ApiGatewayResponse;
 import lombok.Data;
 import lombok.Setter;
@@ -49,7 +49,7 @@ public class CreateLiquidityPoolHandler implements RequestHandler<CreateLiquidit
         }
 
         // create internal LiquidityPool object to save in DB
-        String liquidityPoolName = MessageFormat.format("{0}-{1}",
+        final String liquidityPoolName = MessageFormat.format("{0}-{1}",
                 assetInfoList.get(0).getName(), assetInfoList.get(1).getName());
         log.info("Inputs valid. Creating pool with name: {}", liquidityPoolName);
         CreateLiquidityPoolRequest.AssetInfo assetOne = assetInfoList.get(0);
@@ -109,7 +109,7 @@ public class CreateLiquidityPoolHandler implements RequestHandler<CreateLiquidit
                 || assetInfo.getInitialPrice() == null || assetInfo.getInitialSupply() == null) {
             throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
         }
-        if (!ServiceConstants.ALLOWED_ASSETS.contains(assetInfo.getName())) {
+        if (!Asset.isValidAssetName(assetInfo.getName())) {
             throw new IllegalArgumentException(ErrorMessages.INVALID_ASSET_NAME);
         }
         if (assetInfo.getInitialPrice() < ServiceLimits.MIN_PRICE
