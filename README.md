@@ -1,24 +1,24 @@
 # Automated Market Maker
 
-An automated market maker (AMM) is a type of market that (without a third party) can automatically allow the swapping of
-any two assets. This works by having a "constant liquidity", or a "supply" of both assets in the pool (which users provide).
-One standard way an AMM calculates price action is using the **constant product formula**, which is what this project
-simulates as trades are made. At a high level, whenever a trade is made in the pool, the market maker will **maintain**
-a constant **K-value**, which is calculated by:
+An automated market maker (AMM) is an entity that, without a third party, can automatically allow the swapping of
+any two assets and set / maintain prices of the assets. This is contrary to traditional centralized market systems that
+set prices by matching limit buy / sell orders. An AMM works by having a "constant liquidity", or a "supply" of both assets
+to be swapped in a dedicated pool.
+
+One standard way an AMM calculates price action is using the **constant product formula** - At a high level, whenever a
+trade (swap of assets) is made in the pool, the market maker will **maintain** a constant **K-value**, which is calculated by:
 
 ```
 k = marketCapAssetOne * marketCapAssetTwo
 ```
 
-For an overview, see https://www.youtube.com/watch?v=1PbZMudPP5E
+Based on this, the supply and prices of the assets are calculated after a swap.
+For a more detailed overview, see https://www.youtube.com/watch?v=1PbZMudPP5E
 
-This project simulates an AMM by allowing the creation of liquidity pools between arbitrary assets (with configurable
-starting values). Swaps / trades can be simulated / run and the price action can be observed, while the AMM maintainns
-the constant product.
 
 There are a few APIs in the project to help simulate an AMM:
 * **Create Liquidity Pool**
-  * Allows the creation of a liquidity pool between any two assets with starting prices / supply. 
+  * Allows the creation of a liquidity pool between any two assets with configurable starting prices / supply
   * When a pool is created, it **must** have equal starting market cap value
 * **Get Liquidity Pool**
     * Returns the details of a liquidity pool
