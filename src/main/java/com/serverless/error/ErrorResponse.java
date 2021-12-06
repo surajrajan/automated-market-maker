@@ -1,4 +1,4 @@
-package com.api.model;
+package com.serverless.error;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

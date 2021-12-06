@@ -2,8 +2,8 @@ package com.serverless;
 
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.api.model.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.serverless.error.ErrorResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
