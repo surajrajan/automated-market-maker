@@ -1,7 +1,11 @@
 package com.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 @Data
 @Builder
@@ -11,5 +15,6 @@ import lombok.*;
 public class AssetAmount {
     @NonNull
     private Double amount;
-    @NonNull private Double price;
+    @NonNull
+    private Double price;
 }

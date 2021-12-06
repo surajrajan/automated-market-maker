@@ -40,9 +40,9 @@ public class SubmitSwapRequestHandler implements RequestHandler<SubmitSwapReques
         try {
             validateRequest(input);
             final String encryptedSwapClaim = input.getSwapClaim();
-            final String swapClaimAsString = kmsClient.decrypt(encryptedSwapClaim);
-            log.info("swapClaimAsString: {}", swapClaimAsString);
-            swapContract = objectMapper.readValue(swapClaimAsString, SwapContract.class);
+            final String swapContractAsString = kmsClient.decrypt(encryptedSwapClaim);
+            log.info("swapContractAsString: {}", swapContractAsString);
+            swapContract = objectMapper.readValue(swapContractAsString, SwapContract.class);
         } catch (IllegalArgumentException | JsonProcessingException e) {
             log.error(e.getMessage(), e);
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);

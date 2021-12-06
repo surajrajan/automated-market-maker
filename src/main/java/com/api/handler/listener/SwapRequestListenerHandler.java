@@ -8,7 +8,11 @@ import com.client.dynamodb.DynamoDBClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logic.MarketMakerLogic;
-import com.model.*;
+import com.model.LiquidityPool;
+import com.model.SwapContract;
+import com.model.SwapRequest;
+import com.model.Transaction;
+import com.model.TransactionStatus;
 import com.util.LiquidityPoolUtil;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -34,20 +38,15 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
         try {
             // only one message at a time
             String body = sqsEvent.getRecords().get(0).getBody();
+            log.info("SQS message body: {}", body);
             swapRequest = objectMapper.readValue(body, SwapRequest.class);
         } catch (JsonProcessingException e) {
             log.error("Message is invalid format. Failed. Deleting.", e);
             return null;
         }
 
-        Date now = new Date();
-        SwapContract swapContract = swapRequest.getSwapContract();
-        if (now.after(swapContract.getExpiresAt())) {
-            log.error("Claim was expired. Failed. Deleting");
-            return null;
-        }
-
         // load existing pool
+        SwapContract swapContract = swapRequest.getSwapContract();
         final String transactionId = swapRequest.getTransactionId();
         log.info("Processing transactionId: {}", transactionId);
         String liquidityPoolName = LiquidityPoolUtil
@@ -60,6 +59,7 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
 
         // construct the transaction, containing before and after details of the liquidity pool
         final Transaction transaction = new Transaction();
+        Date now = new Date();
         transaction.setTransactionId(transactionId);
         transaction.setTransactionState(TransactionStatus.FINISHED.name());
         transaction.setSwapContract(swapContract);

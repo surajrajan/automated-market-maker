@@ -11,7 +11,6 @@ import com.model.SwapRequest
 import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
 import spock.lang.Subject
-import spock.lang.Unroll
 
 class SubmitSwapHandlerSpec extends Specification {
 
