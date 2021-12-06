@@ -17,7 +17,6 @@ class SwapRequestListenerHandlerSpec extends Specification {
     private String someValidLiquidityPoolName = "Apples-Bananas"
     private Double someValidSupply = 50000
     private Double someValidPrice = 100
-    private String someTransactionId = "someTransactionId"
     private String someValidMessageBody = "{\n" +
             "    \"swapContract\": {\n" +
             "        \"inName\": \"Apples\",\n" +

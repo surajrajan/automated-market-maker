@@ -10,8 +10,8 @@ import com.config.ServiceLimits;
 import com.model.AssetAmount;
 import com.model.LiquidityPool;
 import com.model.exception.InvalidInputException;
-import com.model.types.Asset;
 import com.serverless.ApiGatewayResponse;
+import com.util.LiquidityPoolUtil;
 import com.util.ObjectMapperUtil;
 import lombok.Data;
 import lombok.Setter;
@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Handler for CreateLiquidityPool API.
@@ -37,16 +36,15 @@ public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProx
     }
 
     @Override
-    public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent eventRequest, Context context) {
-        log.info("Received event request: {}", eventRequest);
-        final String body = eventRequest.getBody();
+    public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
+        log.info("Received request event: {}", requestEvent);
+        final String body = requestEvent.getBody();
         final CreateLiquidityPoolRequest request;
         final String liquidityPoolName;
         // validations
         List<AssetAmount> assetAmountList;
         try {
-            liquidityPoolName = getLiquidityPoolName(eventRequest.getPathParameters());
-            validateLiquidityPoolName(liquidityPoolName);
+            liquidityPoolName = LiquidityPoolUtil.extractLiquidityPoolNameFromPathParams(requestEvent.getPathParameters());
             request = ObjectMapperUtil.toClass(body, CreateLiquidityPoolRequest.class);
             assetAmountList = Arrays.asList(request.getAssetAmountOne(), request.getAssetAmountTwo());
             validateBounds(assetAmountList);
@@ -75,35 +73,10 @@ public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProx
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
         }
 
-        // return success / created / 204
-        return ApiGatewayResponse.createEmptyResponse(204, context);
+        // return success / created / 201
+        return ApiGatewayResponse.createEmptyResponse(201, context);
     }
 
-    private String getLiquidityPoolName(final Map<String, String> pathParameters) throws InvalidInputException {
-        String liquidityPoolName = pathParameters.get("liquidityPoolName");
-        if (liquidityPoolName == null || liquidityPoolName.isEmpty()) {
-            throw new InvalidInputException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
-        }
-        return liquidityPoolName;
-    }
-
-    private void validateLiquidityPoolName(final String liquidityPoolName) throws InvalidInputException {
-        String assetNames[] = liquidityPoolName.split("-");
-        if (assetNames.length != 2) {
-            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME);
-        }
-        String assetOne = assetNames[0];
-        String assetTwo = assetNames[1];
-        if (!Asset.isValidAssetName(assetOne) || !Asset.isValidAssetName(assetTwo)) {
-            throw new InvalidInputException(ErrorMessages.INVALID_ASSET_NAME);
-        }
-        if (assetOne.equals(assetTwo)) {
-            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME);
-        }
-        if (assetOne.compareTo(assetTwo) >= 0) {
-            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME_ASSET_ORDER);
-        }
-    }
 
     private void validateBounds(final List<AssetAmount> assetAmountList) throws InvalidInputException {
         // ensure valid numbers

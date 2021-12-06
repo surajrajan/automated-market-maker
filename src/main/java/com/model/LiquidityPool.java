@@ -3,7 +3,6 @@ package com.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBVersionAttribute;
 import com.client.dynamodb.DBConstants;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +25,4 @@ public class LiquidityPool {
 
     private AssetAmount assetOne;
     private AssetAmount assetTwo;
-
-    @DynamoDBVersionAttribute
-    private Long version;
 }

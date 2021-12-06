@@ -2,29 +2,29 @@ package com.api.handler.swap;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.client.kms.KMSClient;
 import com.config.ErrorMessages;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logic.MarketMakerLogic;
 import com.model.LiquidityPool;
 import com.model.SwapContract;
+import com.model.exception.InvalidInputException;
 import com.model.types.Asset;
 import com.serverless.ApiGatewayResponse;
 import com.util.LiquidityPoolUtil;
+import com.util.ObjectMapperUtil;
 import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Setter
-public class EstimateSwapHandler implements RequestHandler<EstimateSwapHandler.EstimateSwapRequest, ApiGatewayResponse> {
+public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyRequestEvent, ApiGatewayResponse> {
 
     private DynamoDBClient dynamoDBClient;
     private KMSClient kmsClient;
-
-    private static ObjectMapper objectMapper = new ObjectMapper();
 
     public EstimateSwapHandler() {
         this.dynamoDBClient = DaggerAppDependencies.builder().build().dynamoDBClient();
@@ -32,23 +32,25 @@ public class EstimateSwapHandler implements RequestHandler<EstimateSwapHandler.E
     }
 
     @Override
-    public ApiGatewayResponse handleRequest(EstimateSwapRequest input, Context context) {
-        log.info("Received request: {}", input);
+    public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
+        log.info("Received request event: {}", requestEvent);
         final LiquidityPool liquidityPool;
-        final SwapContract swapContract;
+        final EstimateSwapRequest estimateSwapRequest;
         try {
-            validateRequest(input);
-            String liquidityPoolName = LiquidityPoolUtil.getLiquidityPoolName(input.getAssetNameIn(), input.getAssetNameOut());
+            estimateSwapRequest = ObjectMapperUtil.toClass(requestEvent.getBody(), EstimateSwapRequest.class);
+            validateRequest(estimateSwapRequest);
+            String liquidityPoolName = LiquidityPoolUtil.inferLiquidityPoolFromSwapRequest(estimateSwapRequest);
             liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
-            swapContract = MarketMakerLogic.createSwapContract(liquidityPool, input);
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidInputException e) {
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
         }
+
+        SwapContract swapContract = MarketMakerLogic.createSwapContract(liquidityPool, estimateSwapRequest);
 
         // return claim token
         final String encryptedClaim;
         try {
-            final String swapContractAsString = objectMapper.writeValueAsString(swapContract);
+            final String swapContractAsString = ObjectMapperUtil.toString(swapContract);
             log.info("swapContractAsString: {}", swapContractAsString);
             encryptedClaim = kmsClient.encrypt(swapContractAsString);
             log.info("encryptedClaim: {}", encryptedClaim);
@@ -64,16 +66,19 @@ public class EstimateSwapHandler implements RequestHandler<EstimateSwapHandler.E
         return ApiGatewayResponse.createSuccessResponse(estimateSwapResponse, context);
     }
 
-    private void validateRequest(final EstimateSwapRequest request) {
+    private void validateRequest(final EstimateSwapRequest request) throws InvalidInputException {
         if (request == null || request.getAssetNameIn() == null
                 || request.getAssetAmountIn() == null || request.getAssetNameOut() == null) {
-            throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
+            throw new InvalidInputException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
         }
         if (!Asset.isValidAssetName(request.getAssetNameIn()) || !Asset.isValidAssetName(request.getAssetNameOut())) {
-            throw new IllegalArgumentException(ErrorMessages.INVALID_ASSET_NAME);
+            throw new InvalidInputException(ErrorMessages.INVALID_ASSET_NAME);
+        }
+        if (request.getAssetNameIn().equals(request.getAssetNameOut())) {
+            throw new InvalidInputException(ErrorMessages.DUPLICATE_ASSET);
         }
         if (request.getAssetAmountIn() < 0) {
-            throw new IllegalArgumentException(ErrorMessages.NEGATIVE_AMOUNT_TO_SWAP);
+            throw new InvalidInputException(ErrorMessages.NEGATIVE_AMOUNT_TO_SWAP);
         }
     }
 

@@ -14,8 +14,17 @@ public final class ObjectMapperUtil {
         try {
             return objectMapper.readValue(input, clazz);
         } catch (JsonProcessingException e) {
-            log.error("Failed to process,", e);
-            throw new InvalidInputException("", e);
+            log.error("Failed to deserialize,", e);
+            throw new InvalidInputException(e);
+        }
+    }
+
+    public static String toString(final Object input) throws InvalidInputException {
+        try {
+            return objectMapper.writeValueAsString(input);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize,", e);
+            throw new InvalidInputException(e);
         }
     }
 }

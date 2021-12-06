@@ -1,8 +1,11 @@
 package com.util;
 
+import com.api.handler.swap.EstimateSwapHandler;
 import com.config.ErrorMessages;
 import com.model.AssetAmount;
 import com.model.LiquidityPool;
+import com.model.exception.InvalidInputException;
+import com.model.types.Asset;
 import lombok.extern.slf4j.Slf4j;
 
 import java.text.MessageFormat;
@@ -53,5 +56,44 @@ public final class LiquidityPoolUtil {
         final Double k = constantMarketCapOne * constantMarketCapOne;
         log.info("constantMarketCapOne: {}, constantMarketCapOne: {}, k: {}",
                 constantMarketCapOne, constantMarketCapTwo, k);
+    }
+
+
+    public static String extractLiquidityPoolNameFromPathParams(final Map<String, String> pathParameters)
+            throws InvalidInputException {
+        String liquidityPoolName = pathParameters.get("liquidityPoolName");
+        if (liquidityPoolName == null || liquidityPoolName.isEmpty()) {
+            throw new InvalidInputException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
+        }
+        validateLiquidityPoolName(liquidityPoolName);
+        return liquidityPoolName;
+    }
+
+    public static String inferLiquidityPoolFromSwapRequest(final EstimateSwapHandler.EstimateSwapRequest estimateSwapRequest) {
+        String assetIn = estimateSwapRequest.getAssetNameIn();
+        String assetOut = estimateSwapRequest.getAssetNameOut();
+        int compare = assetIn.compareTo(assetOut);
+        if (compare < 0) {
+            return MessageFormat.format("{0}-{1}", assetIn, assetOut);
+        }
+        return MessageFormat.format("{0}-{1}", assetOut, assetIn);
+    }
+
+    private static void validateLiquidityPoolName(final String liquidityPoolName) throws InvalidInputException {
+        String assetNames[] = liquidityPoolName.split("-");
+        if (assetNames.length != 2) {
+            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME);
+        }
+        String assetOne = assetNames[0];
+        String assetTwo = assetNames[1];
+        if (!Asset.isValidAssetName(assetOne) || !Asset.isValidAssetName(assetTwo)) {
+            throw new InvalidInputException(ErrorMessages.INVALID_ASSET_NAME);
+        }
+        if (assetOne.equals(assetTwo)) {
+            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME);
+        }
+        if (assetOne.compareTo(assetTwo) >= 0) {
+            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME_ASSET_ORDER);
+        }
     }
 }

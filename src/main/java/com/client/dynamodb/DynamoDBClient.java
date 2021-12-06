@@ -26,11 +26,23 @@ import java.util.UUID;
 public class DynamoDBClient {
 
     private DynamoDBMapper dynamoDBMapper;
+
+    /**
+     * Configures the ability to skip null attributes when making an update. Ex - when an item is updated
+     * a second time, and only some fields need to be updated (ignoring existing fields).
+     */
     private static DynamoDBMapperConfig SKIP_NULL_ATTRS_WRITE_CONFIG = DynamoDBMapperConfig.builder()
             .withSaveBehavior(DynamoDBMapperConfig.SaveBehavior.UPDATE_SKIP_NULL_ATTRIBUTES).build();
 
+    /**
+     * Creates a liquidity pool.
+     *
+     * @param liquidityPool
+     * @throws InvalidInputException when poolName (hashKey) already exists
+     */
     public void createLiquidityPool(final LiquidityPool liquidityPool) throws InvalidInputException {
         try {
+            log.info("Creating liquidity pool: {}", liquidityPool);
             DynamoDBSaveExpression saveExpr = new DynamoDBSaveExpression();
             Map<String, ExpectedAttributeValue> expectedAttributeValueMap = new HashMap<>();
             // fail if item already exists
@@ -43,20 +55,22 @@ public class DynamoDBClient {
         }
     }
 
-    public LiquidityPool loadLiquidityPool(final String liquidityPoolName) {
+    /**
+     * Loads an existing liquidity pool by hash key liquidityPoolName.
+     *
+     * @param liquidityPoolName
+     * @return LiquidityPool
+     * @throws InvalidInputException if poolName (hashKey) does not exist
+     */
+    public LiquidityPool loadLiquidityPool(final String liquidityPoolName) throws InvalidInputException {
         log.info("Getting liquidity pool with name: {}", liquidityPoolName);
-        try {
-            LiquidityPool liquidityPool = dynamoDBMapper.load(LiquidityPool.class, liquidityPoolName);
-            log.info("Returned: {}", liquidityPool);
-            LiquidityPoolUtil.logKValue(liquidityPool);
-            if (liquidityPool == null) {
-                throw new IllegalArgumentException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME);
-            }
-            return liquidityPool;
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new IllegalArgumentException(e.getMessage(), e);
+        LiquidityPool liquidityPool = dynamoDBMapper.load(LiquidityPool.class, liquidityPoolName);
+        log.info("Returned: {}", liquidityPool);
+        LiquidityPoolUtil.logKValue(liquidityPool);
+        if (liquidityPool == null) {
+            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME + "- " + liquidityPoolName);
         }
+        return liquidityPool;
     }
 
     public String initializeTransaction() {

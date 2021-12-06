@@ -1,6 +1,7 @@
 package api.handler.swap
 
 import com.amazonaws.services.lambda.runtime.Context
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
 import com.api.handler.swap.EstimateSwapHandler
 import com.client.dynamodb.DynamoDBClient
 import com.client.kms.KMSClient
@@ -12,6 +13,8 @@ import com.model.SwapContract
 import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
 import spock.lang.Subject
+import spock.lang.Unroll
+import util.TestUtil
 
 class EstimateSwapHandlerSpec extends Specification {
 
@@ -32,6 +35,7 @@ class EstimateSwapHandlerSpec extends Specification {
     @Subject
     EstimateSwapHandler estimateSwapHandler
 
+    APIGatewayProxyRequestEvent requestEvent
     EstimateSwapHandler.EstimateSwapRequest request;
     LiquidityPool liquidityPool
 
@@ -40,28 +44,27 @@ class EstimateSwapHandlerSpec extends Specification {
         estimateSwapHandler.setDynamoDBClient(dynamoDBClient)
         estimateSwapHandler.setKmsClient(kmsClient)
 
-        request = new EstimateSwapHandler.EstimateSwapRequest()
-        request.setAssetNameIn(someValidAssetOne)
-        request.setAssetNameOut(someValidAssetTwo)
-        request.setAssetAmountIn(someValidAmountToSwap)
-
         liquidityPool = new LiquidityPool()
         liquidityPool.setLiquidityPoolName(someValidLiquidityPoolName)
-
         AssetAmount someValidAssetAmount = new AssetAmount()
         someValidAssetAmount.setAmount(someValidSupply)
         someValidAssetAmount.setPrice(someValidPrice)
         liquidityPool.setAssetOne(someValidAssetAmount)
         liquidityPool.setAssetTwo(someValidAssetAmount)
+
     }
 
+    @Unroll
     def "given valid request (#type) should return valid swap contract"() {
         given:
+        request = new EstimateSwapHandler.EstimateSwapRequest()
         request.setAssetNameIn(inAsset)
         request.setAssetNameOut(outAsset)
+        request.setAssetAmountIn(someValidAmountToSwap)
+        requestEvent = TestUtil.createEventRequest(request, someValidLiquidityPoolName)
 
         when:
-        ApiGatewayResponse response = estimateSwapHandler.handleRequest(request, context)
+        ApiGatewayResponse response = estimateSwapHandler.handleRequest(requestEvent, context)
 
         then:
         1 * dynamoDBClient.loadLiquidityPool(someValidLiquidityPoolName) >> {
@@ -90,12 +93,14 @@ class EstimateSwapHandlerSpec extends Specification {
 
     def "given invalid request (#type) should throw bad request"() {
         given:
+        request = new EstimateSwapHandler.EstimateSwapRequest()
         request.setAssetNameIn(inAsset)
         request.setAssetNameOut(outAsset)
         request.setAssetAmountIn(amountToSwap)
+        requestEvent = TestUtil.createEventRequest(request, someValidLiquidityPoolName)
 
         when:
-        ApiGatewayResponse response = estimateSwapHandler.handleRequest(request, context)
+        ApiGatewayResponse response = estimateSwapHandler.handleRequest(requestEvent, context)
 
         then:
         assert response.getStatusCode() == 400

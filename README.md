@@ -46,6 +46,29 @@ sls deploy
 * Create **KMS Symmetric Key** in AWS console
 * Set the Key ARN in `com.client.kms.KMSConstants` before deploying code
 
+Once deployed, you should have the ~following service created:
+```
+Service Information
+service: AutomatedMarketMaker
+stage: dev
+region: us-east-1
+stack: AutomatedMarketMaker-dev
+resources: 37
+api keys:
+  None
+endpoints:
+  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool
+  GET - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool/{liquidityPoolName}
+  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/swap/estimate
+  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/swap/submit
+functions:
+  createLiquidityPool: AutomatedMarketMaker-dev-createLiquidityPool
+  getLiquidityPool: AutomatedMarketMaker-dev-getLiquidityPool
+  estimateSwap: AutomatedMarketMaker-dev-estimateSwap
+  submitSwap: AutomatedMarketMaker-dev-submitSwap
+  swapRequestListener: AutomatedMarketMaker-dev-swapRequestListener
+```
+
 ## Example
 
 ### Create Liquidity Pool

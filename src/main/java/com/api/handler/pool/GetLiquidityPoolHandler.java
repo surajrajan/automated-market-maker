@@ -2,19 +2,19 @@ package com.api.handler.pool;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
-import com.config.ErrorMessages;
 import com.model.LiquidityPool;
+import com.model.exception.InvalidInputException;
 import com.serverless.ApiGatewayResponse;
+import com.util.LiquidityPoolUtil;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
-
 @Slf4j
 @Setter
-public class GetLiquidityPoolHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
+public class GetLiquidityPoolHandler implements RequestHandler<APIGatewayProxyRequestEvent, ApiGatewayResponse> {
 
     private DynamoDBClient dynamoDBClient;
 
@@ -23,31 +23,14 @@ public class GetLiquidityPoolHandler implements RequestHandler<Map<String, Objec
     }
 
     @Override
-    public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
-        log.info("Received request: {}", input);
+    public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
+        log.info("Received request event: {}", requestEvent);
         try {
-            final String liquidityPoolName = extractLiquidityPoolNameFromPathParam(input);
+            final String liquidityPoolName = LiquidityPoolUtil.extractLiquidityPoolNameFromPathParams(requestEvent.getPathParameters());
             final LiquidityPool liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
-            if (liquidityPool == null) {
-                return ApiGatewayResponse.createBadRequest(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME, context);
-            }
             return ApiGatewayResponse.createSuccessResponse(liquidityPool, context);
-
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidInputException e) {
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
-        }
-    }
-
-    private String extractLiquidityPoolNameFromPathParam(final Map<String, Object> input) {
-        try {
-            final Map<String, String> pathParameters = (Map<String, String>) input.get("pathParameters");
-            final String liquidityPoolName = pathParameters.get("liquidityPoolName");
-            if (liquidityPoolName == null) {
-                throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
-            }
-            return liquidityPoolName;
-        } catch (Exception e) {
-            throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
         }
     }
 }

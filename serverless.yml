@@ -43,7 +43,7 @@ functions:
     handler: com.api.handler.pool.CreateLiquidityPoolHandler
     events:
       - http:
-          path: /pool
+          path: /pool/{liquidityPoolName}
           method: post
   # Gets a liquidity pool
   getLiquidityPool:
@@ -58,15 +58,15 @@ functions:
     handler: com.api.handler.swap.EstimateSwapHandler
     events:
       - http:
-          path: /swap/estimate
+          path: /pool/swap/estimate
           method: post
 
   # Submits a swap
   submitSwap:
-    handler: com.api.handler.swap.SubmitSwapRequestHandler
+    handler: com.api.handler.swap.SubmitSwapHandler
     events:
       - http:
-          path: /swap/submit
+          path: /pool/swap/estimate
           method: post
 
   # Submits a swap

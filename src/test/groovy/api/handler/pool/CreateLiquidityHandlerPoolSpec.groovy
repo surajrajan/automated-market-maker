@@ -6,7 +6,6 @@ import com.api.handler.pool.CreateLiquidityPoolHandler
 import com.api.handler.pool.CreateLiquidityPoolHandler.CreateLiquidityPoolRequest
 import com.client.dynamodb.DynamoDBClient
 import com.config.ErrorMessages
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.model.AssetAmount
 import com.model.LiquidityPool
 import com.model.exception.InvalidInputException
@@ -14,15 +13,15 @@ import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
 import spock.lang.Subject
 import spock.lang.Unroll
+import util.TestUtil
 
 class CreateLiquidityHandlerPoolSpec extends Specification {
 
     def context = Mock(Context)
     def dynamoDBClient = Mock(DynamoDBClient)
-    private ObjectMapper objectMapper = new ObjectMapper();
 
     private CreateLiquidityPoolHandler.CreateLiquidityPoolRequest request;
-    private APIGatewayProxyRequestEvent eventRequest;
+    private APIGatewayProxyRequestEvent requestEvent;
     private Integer someValidSupply = 100
     private Integer someValidPrice = 10
     private AssetAmount someValidAssetAmount = AssetAmount.builder()
@@ -39,18 +38,18 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         request = new CreateLiquidityPoolHandler.CreateLiquidityPoolRequest()
         request.setAssetAmountOne(someValidAssetAmount)
         request.setAssetAmountTwo(someValidAssetAmount)
-        eventRequest = createEventRequest(request, someValidLiquidityPoolName)
+        requestEvent = TestUtil.createEventRequest(request, someValidLiquidityPoolName)
     }
 
     def "given valid inputs should call dynamoDB to save"() {
         when:
-        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(eventRequest, context)
+        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(requestEvent, context)
 
         then:
         1 * dynamoDBClient.createLiquidityPool(_) >> { LiquidityPool liquidityPool ->
             assertLiquidityPool(liquidityPool)
         }
-        assert response.getStatusCode() == 204
+        assert response.getStatusCode() == 201
     }
 
     @Unroll
@@ -62,10 +61,10 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         assetAmountOne.setAmount(supply)
         request.setAssetAmountOne(assetAmountOne)
         request.setAssetAmountTwo(someValidAssetAmount)
-        APIGatewayProxyRequestEvent eventRequest = createEventRequest(request, liquidityPoolName)
+        APIGatewayProxyRequestEvent requestEvent = TestUtil.createEventRequest(request, liquidityPoolName)
 
         when:
-        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(eventRequest, context)
+        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(requestEvent, context)
 
         then:
         assert response.getStatusCode() == 400
@@ -84,7 +83,7 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
 
     def "given db client throws invalid input exception, should throw bad request exception"() {
         when:
-        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(eventRequest, context)
+        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(requestEvent, context)
 
         then:
         dynamoDBClient.createLiquidityPool(_) >> {
@@ -102,18 +101,4 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         assert liquidityPool.getAssetTwo().getAmount() == someValidSupply
     }
 
-    private APIGatewayProxyRequestEvent createEventRequest(final CreateLiquidityPoolRequest request,
-                                                           final String liquidityPoolName) {
-        String body = objectMapper.writeValueAsString(request)
-        eventRequest = new APIGatewayProxyRequestEvent()
-        eventRequest.setBody(body)
-        eventRequest.setPathParameters(getLiquidityPoolPathParam(liquidityPoolName))
-        return eventRequest
-    }
-
-    private Map<String, String> getLiquidityPoolPathParam(final String liquidityPoolName) {
-        Map<String, String> pathParameters = new HashMap<>()
-        pathParameters.put("liquidityPoolName", liquidityPoolName)
-        return pathParameters
-    }
 }

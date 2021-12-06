@@ -1,16 +1,17 @@
 package api.handler.swap
 
 import com.amazonaws.services.lambda.runtime.Context
-import com.api.handler.swap.SubmitSwapRequestHandler
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
+import com.api.handler.swap.SubmitSwapHandler
 import com.client.dynamodb.DynamoDBClient
 import com.client.kms.KMSClient
 import com.client.sqs.SQSClient
 import com.config.ErrorMessages
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.model.SwapRequest
 import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
 import spock.lang.Subject
+import util.TestUtil
 
 class SubmitSwapHandlerSpec extends Specification {
 
@@ -24,27 +25,27 @@ class SubmitSwapHandlerSpec extends Specification {
     private final String someExpiredSwapContract = "{\"inName\":\"Apples\",\"inAssetAmount\":{\"amount\":7000.0,\"price\":100.0},\"outName\":\"Bananas\",\"outAssetAmount\":{\"amount\":6140.35087719298,\"price\":113.99999999999999},\"expiresAt\":1638774364000}"
     private final String someTransactionId = "someTransactionId"
 
-    private SubmitSwapRequestHandler.SubmitSwapRequest submitSwapRequest
-    private ObjectMapper objectMapper
+    private APIGatewayProxyRequestEvent requestEvent
+    private SubmitSwapHandler.SubmitSwapRequest submitSwapRequest
 
     @Subject
-    SubmitSwapRequestHandler submitSwapRequestHandler
+    SubmitSwapHandler submitSwapRequestHandler
 
     def setup() {
-        submitSwapRequestHandler = new SubmitSwapRequestHandler()
+        submitSwapRequestHandler = new SubmitSwapHandler()
         submitSwapRequestHandler.setSqsClient(sqsClient)
         submitSwapRequestHandler.setDynamoDBClient(dynamoDBClient)
         submitSwapRequestHandler.setKmsClient(kmsClient)
 
-        submitSwapRequest = new SubmitSwapRequestHandler.SubmitSwapRequest()
+        submitSwapRequest = new SubmitSwapHandler.SubmitSwapRequest()
         submitSwapRequest.setSwapClaim(someValidSwapClaim)
 
-        objectMapper = new ObjectMapper()
+        requestEvent = TestUtil.createEventRequest(submitSwapRequest)
     }
 
     def "given valid claim should start transaction and submit swap to sqs"() {
         when:
-        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(submitSwapRequest, context)
+        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
 
         then:
         1 * kmsClient.decrypt(someValidSwapClaim) >> {
@@ -55,7 +56,7 @@ class SubmitSwapHandlerSpec extends Specification {
             return someTransactionId
         }
         1 * sqsClient.submitSwap(_) >> { SwapRequest swapRequest ->
-            assert objectMapper.writeValueAsString(swapRequest.getSwapContract()) == someValidSwapContract
+            assert !swapRequest.getTransactionId().isEmpty()
         }
         assert response.getBody().contains(someTransactionId)
         assert response.getStatusCode() == 200
@@ -63,7 +64,7 @@ class SubmitSwapHandlerSpec extends Specification {
 
     def "given expired claim should throw bad request"() {
         when:
-        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(submitSwapRequest, context)
+        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
 
         then:
         1 * kmsClient.decrypt(someValidSwapClaim) >> {
@@ -73,15 +74,14 @@ class SubmitSwapHandlerSpec extends Specification {
         assert response.getStatusCode() == 400
     }
 
-    def "given invalid input should throw bad request"() {
-        given:
-        SubmitSwapRequestHandler.SubmitSwapRequest emptyRequest = new SubmitSwapRequestHandler.SubmitSwapRequest()
-
+    def "given claim is invalid format should throw bad request"() {
         when:
-        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(emptyRequest, context)
+        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
 
         then:
-        assert response.getBody().contains(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS)
+        1 * kmsClient.decrypt(someValidSwapClaim) >> {
+            return "blah"
+        }
         assert response.getStatusCode() == 400
     }
 }
