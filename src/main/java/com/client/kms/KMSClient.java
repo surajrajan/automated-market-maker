@@ -7,11 +7,13 @@ import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @Slf4j
 @AllArgsConstructor
+@Singleton
 public class KMSClient {
 
     private AwsCrypto awsCrypto;

@@ -18,9 +18,10 @@ class GetLiquidityHandlerPoolSpec extends Specification {
     private String someValidLiquidityPoolName = "someValidLiquidityPoolName"
     private Integer someValidSupply = 100
     private Integer someValidPrice = 10
+    private Long someVersion = 1
     private AssetAmount someValidAssetAmount = new AssetAmount(someValidSupply, someValidPrice)
     private LiquidityPool someValidLiquidityPool = new LiquidityPool(someValidLiquidityPoolName,
-            someValidAssetAmount, someValidAssetAmount);
+            someValidAssetAmount, someValidAssetAmount, someVersion);
 
     @Subject
     GetLiquidityPoolHandler getLiquidityPoolHandler

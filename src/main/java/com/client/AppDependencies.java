@@ -8,9 +8,6 @@ import com.client.sqs.SQSClient;
 import com.client.sqs.SQSModule;
 import dagger.Component;
 
-import javax.inject.Singleton;
-
-@Singleton
 @Component(modules = {DynamoDBModule.class, SQSModule.class, KMSModule.class})
 public interface AppDependencies {
     DynamoDBClient dynamoDBClient();

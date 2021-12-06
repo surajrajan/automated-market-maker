@@ -13,6 +13,7 @@ import com.util.LiquidityPoolUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.inject.Singleton;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +21,7 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @Slf4j
+@Singleton
 public class DynamoDBClient {
 
     private DynamoDBMapper dynamoDBMapper;

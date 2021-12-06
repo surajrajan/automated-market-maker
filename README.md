@@ -15,9 +15,8 @@ sls deploy
 
 ## Example
 
-### Create a Liquidity Pool
-Start by creating a liquidity pool (trading pool) between any two pairs of assets. All
-supported assets are documented in `com.model.Asset` enum.
+### 1) Create Liquidity Pool
+Start by creating a liquidity pool (trading pool) between any two pairs of assets.
 
 **API Name:** `CreateLiquidityPool`
 ```
@@ -39,9 +38,13 @@ sls invoke --function createLiquidityPool --path apiTestData/createLiquidityPool
   }
 }
 ```
+**Requirements**
 * Market cap of both assets **must** be equal
+* All supported assets are documented in `com.model.types.Asset` enum.
 
 **Response**
+
+*Example Response*
 
 **GetLiquidityPool:**
 ```
