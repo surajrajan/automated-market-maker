@@ -1,9 +1,9 @@
 # Automated Market Maker
 
 An automated market maker (AMM) is an entity that, without a third party, can automatically allow the swapping of
-any two assets and set / maintain prices of the assets. This is contrary to traditional centralized market systems that
-set prices by matching limit buy / sell orders. An AMM works by having a "constant liquidity", or a "supply" of both assets
-to be swapped in a dedicated pool.
+any two assets and set / maintain prices of the assets in the market. This is contrary to traditional centralized market
+systems that set prices by matching limit buy / sell orders. An AMM works by having a "constant liquidity", or a "supply"
+of both assets to be swapped in a dedicated pool.
 
 One standard way an AMM calculates price action is using the **constant product formula** - At a high level, whenever a
 trade (swap of assets) is made in the pool, the market maker will **maintain** a constant **K-value**, which is calculated by:
@@ -126,7 +126,7 @@ back on submit swap API to submit the swap.
 ```
 {
     "statusCode": 200,
-    "body": "{\"swapClaim\":\"AgV40z1TxzMfWcRtusgWsOk1WKAthF224eHNlgaZbZ2uQp8AXwABABVhd3MtY3J5cHRvLXB1YmxpYy1rZXkAREExOXJ6OUt5OS9GdVdHajl5SUo3UXVLZlB0Um44UkZneGRnVUVMbXhFa2tOMHlkSG9vTkZmTjFQQVVGeEpYZmVXQT09AAEAB2F3cy1rbXMAS2Fybjphd3M6a21zOnVzLWVhc3QtMTo4NjEwNjA3MTQxMjU6a2V5L2JiZTJlNjNiLWRmYjQtNGI1NS1iNzdiLTEyZTc2NjZmN2I0YQC4AQIBAHhCZM0mN8+FmBmqT4/JZfwJsUzvBO6TKj/WSwbN4RsSUgHsLXrmiHe60m4/lS1uV9AAAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMoI83hkW7IIt94VpVAgEQgDviiTpI4axA6qBtkaxQfFPXFe64aJVSIqjuQRufBtqZDxZ2WNVa+aqzpacK+H4FDL+hc9wwkiCVz82E1QIAABAAGeGPSuzprgzqCqW6DYzxd2MKEYfumiBhZC5bLYeZfA9SbjXUAplrWSrae7HmSaZI/////wAAAAEAAAAAAAAAAAAAAAEAAAC5Gy3cY/GVXgI/RvdG+Y19XdxzLIV5tv7u05LJ9EeSqetb73CKWcly9b3Mem4l9wI6P8hDRQd0cS56Rcp17SOaLUP4bu55A6F6HBC1u37CMx5MB4uxCiOQw58mFEdFCnRtXAz71ViNmR2y8IBzxEkdCbof0gSHJfl+uVrrHkHLyJjtyCl2VRD3VMV47DefiC77OTct2h0Fkw9DRjeEVjzyUZXtu2AGligyzC4mzMZPHuTvQgl63NeL0dnkSBq3kvbNkgJOZmuQP8NlAGcwZQIwF7ZItRJ3LG+1v1YA/6aGYSPLOaNGOa6qZWPUvmYDzCtOzEYYlhCR9v587ScIgAxYAjEAqYu3ddgbzcfi5aWm+g9Re0Ett+C1xzUfIVzPX24yAD4AbHK3uKcHxy+uUMY15Ms3\",\"swapContract\":{\"inName\":\"Apples\",\"inAssetAmount\":{\"amount\":7000.0,\"price\":100.0},\"outName\":\"Bananas\",\"outAssetAmount\":{\"amount\":6140.35087719298,\"price\":113.99999999999999},\"expiresAt\":1638784090002}}",
+    "body": "{\"swapClaim\":\"someEncryptedClaim\",\"swapContract\":{\"inName\":\"Apples\",\"inAssetAmount\":{\"amount\":7000.0,\"price\":100.0},\"outName\":\"Bananas\",\"outAssetAmount\":{\"amount\":6140.35087719298,\"price\":113.99999999999999},\"expiresAt\":1638784090002}}",
     "headers": {
         "RequestId": "d5eee705-b27a-4d4a-bcf8-d7a74e594af0"
     }
@@ -142,7 +142,7 @@ back on submit swap API to submit the swap.
 **Example Request:**
 ```
 {
-  "swapClaim": "AgV40z1TxzMfWcRtusgWsOk1WKAthF224eHNlgaZbZ2uQp8AXwABABVhd3MtY3J5cHRvLXB1YmxpYy1rZXkAREExOXJ6OUt5OS9GdVdHajl5SUo3UXVLZlB0Um44UkZneGRnVUVMbXhFa2tOMHlkSG9vTkZmTjFQQVVGeEpYZmVXQT09AAEAB2F3cy1rbXMAS2Fybjphd3M6a21zOnVzLWVhc3QtMTo4NjEwNjA3MTQxMjU6a2V5L2JiZTJlNjNiLWRmYjQtNGI1NS1iNzdiLTEyZTc2NjZmN2I0YQC4AQIBAHhCZM0mN8"
+  "swapClaim": "someEncryptedClaim"
 }
 ```
 
