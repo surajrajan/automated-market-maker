@@ -1,10 +1,15 @@
 package api.handler.pool
 
 import com.amazonaws.services.lambda.runtime.Context
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
 import com.api.handler.pool.CreateLiquidityPoolHandler
+import com.api.handler.pool.CreateLiquidityPoolHandler.CreateLiquidityPoolRequest
 import com.client.dynamodb.DynamoDBClient
 import com.config.ErrorMessages
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.model.AssetAmount
 import com.model.LiquidityPool
+import com.model.exception.InvalidInputException
 import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
 import spock.lang.Subject
@@ -14,12 +19,17 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
 
     def context = Mock(Context)
     def dynamoDBClient = Mock(DynamoDBClient)
+    private ObjectMapper objectMapper = new ObjectMapper();
 
-    private static CreateLiquidityPoolHandler.CreateLiquidityPoolRequest request;
+    private CreateLiquidityPoolHandler.CreateLiquidityPoolRequest request;
+    private APIGatewayProxyRequestEvent eventRequest;
     private Integer someValidSupply = 100
     private Integer someValidPrice = 10
-    private String someValidAssetOne = "Apples"
-    private String someValidAssetTwo = "Bananas"
+    private AssetAmount someValidAssetAmount = AssetAmount.builder()
+            .amount(someValidSupply)
+            .price(someValidPrice)
+            .build()
+    private String someValidLiquidityPoolName = "Apples-Bananas"
     @Subject
     CreateLiquidityPoolHandler createLiquidityPoolHandler
 
@@ -27,87 +37,83 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         createLiquidityPoolHandler = new CreateLiquidityPoolHandler();
         createLiquidityPoolHandler.setDynamoDBClient(dynamoDBClient)
         request = new CreateLiquidityPoolHandler.CreateLiquidityPoolRequest()
-        CreateLiquidityPoolHandler.CreateLiquidityPoolRequest.AssetInfo assetOne
-                = new CreateLiquidityPoolHandler.CreateLiquidityPoolRequest.AssetInfo()
-        CreateLiquidityPoolHandler.CreateLiquidityPoolRequest.AssetInfo assetTwo
-                = new CreateLiquidityPoolHandler.CreateLiquidityPoolRequest.AssetInfo()
-        assetOne.setName(someValidAssetOne)
-        assetOne.setInitialPrice(someValidPrice)
-        assetOne.setInitialSupply(someValidSupply)
-        assetTwo.setName(someValidAssetTwo)
-        assetTwo.setInitialPrice(someValidPrice)
-        assetTwo.setInitialSupply(someValidSupply)
-        request.setAssetOne(assetOne)
-        request.setAssetTwo(assetTwo)
+        request.setAssetAmountOne(someValidAssetAmount)
+        request.setAssetAmountTwo(someValidAssetAmount)
+        eventRequest = createEventRequest(request, someValidLiquidityPoolName)
     }
 
     def "given valid inputs should call dynamoDB to save"() {
         when:
-        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(request, context)
+        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(eventRequest, context)
 
         then:
-        1 * dynamoDBClient.saveLiquidityPool(_) >> { LiquidityPool liquidityPool ->
-            assertLiquidityPool(liquidityPool)
-        }
-        assert response.getStatusCode() == 204
-    }
-
-    def "given valid inputs reverse order should call dynamoDB to save"() {
-        given:
-        request.getAssetOne().setName(someValidAssetTwo)
-        request.getAssetTwo().setName(someValidAssetOne)
-
-        when:
-        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(request, context)
-
-        then:
-        1 * dynamoDBClient.saveLiquidityPool(_) >> { LiquidityPool liquidityPool ->
+        1 * dynamoDBClient.createLiquidityPool(_) >> { LiquidityPool liquidityPool ->
             assertLiquidityPool(liquidityPool)
         }
         assert response.getStatusCode() == 204
     }
 
     @Unroll
-    def "given invalid input #errorType should throw bad request"() {
+    def "given invalid input (#errorType) should throw bad request"() {
         given:
-        request.getAssetOne().setName(assetNameOne)
-        request.getAssetTwo().setName(assetNameOne)
-        request.getAssetOne().setInitialPrice(price)
-        request.getAssetOne().setInitialSupply(supply)
+        CreateLiquidityPoolRequest request = new CreateLiquidityPoolRequest()
+        AssetAmount assetAmountOne = new AssetAmount()
+        assetAmountOne.setPrice(price)
+        assetAmountOne.setAmount(supply)
+        request.setAssetAmountOne(assetAmountOne)
+        request.setAssetAmountTwo(someValidAssetAmount)
+        APIGatewayProxyRequestEvent eventRequest = createEventRequest(request, liquidityPoolName)
 
         when:
-        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(request, context)
+        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(eventRequest, context)
 
         then:
         assert response.getStatusCode() == 400
         assert response.getBody().contains(expectedMessage) == true
 
         where:
-        errorType              | assetNameOne | assetNameTwo | price | supply | expectedMessage
-        "null value"           | null         | "Bananas"    | 10    | 10     | ErrorMessages.INVALID_REQUEST_MISSING_FIELDS
-        "invalid name"         | "blah"       | "blah "      | 10    | 10     | ErrorMessages.INVALID_ASSET_NAME
-        "invalid price"        | "Apples"     | "Bananas"    | -100  | 100    | ErrorMessages.INVALID_PRICE_RANGE
-        "invalid supply"       | "Apples"     | "Bananas"    | 10    | -100   | ErrorMessages.INVALID_SUPPLY_RANGE
-        "duplicate asset name" | "Apples"     | "Apples"     | 10    | 100    | ErrorMessages.DUPLICATE_ASSET
-        "unequal market cap"   | "Apples"     | "Bananas"    | 10    | 10     | ErrorMessages.UNEQUAL_MARKET_CAP_LIQUIDITY_UPDATE
+        errorType              | liquidityPoolName | price | supply | expectedMessage
+        "null value"           | null              | 10    | 10     | ErrorMessages.INVALID_REQUEST_MISSING_FIELDS
+        "invalid name"         | "blah"            | 10    | 10     | ErrorMessages.INVALID_LIQUIDITY_POOL_NAME
+        "invalid price"        | "Apples-Bananas"  | -100  | 100    | ErrorMessages.INVALID_PRICE_RANGE
+        "invalid supply"       | "Apples-Bananas"  | 10    | -100   | ErrorMessages.INVALID_SUPPLY_RANGE
+        "duplicate asset name" | "Apples-Apples"   | 10    | 100    | ErrorMessages.INVALID_LIQUIDITY_POOL_NAME
+        "reverse order"        | "Bananas-Apples"  | 10    | 100    | ErrorMessages.INVALID_LIQUIDITY_POOL_NAME_ASSET_ORDER
+        "unequal market cap"   | "Apples-Bananas"  | 10    | 10     | ErrorMessages.UNEQUAL_MARKET_CAP_LIQUIDITY_UPDATE
     }
 
-    def "given db client throws illegal argument exception, should throw bad request exception"() {
+    def "given db client throws invalid input exception, should throw bad request exception"() {
         when:
-        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(request, context)
+        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(eventRequest, context)
 
         then:
-        dynamoDBClient.saveLiquidityPool(_) >> {
-            throw new IllegalArgumentException();
+        dynamoDBClient.createLiquidityPool(_) >> {
+            throw new InvalidInputException(ErrorMessages.LIQUIDITY_POOL_ALREADY_EXISTS);
         }
         assert response.getStatusCode() == 400
+        assert response.getBody().contains(ErrorMessages.LIQUIDITY_POOL_ALREADY_EXISTS) == true
     }
 
     void assertLiquidityPool(final LiquidityPool liquidityPool) {
-        assert liquidityPool.getLiquidityPoolName() == (someValidAssetOne + "-" + someValidAssetTwo)
+        assert liquidityPool.getLiquidityPoolName() == someValidLiquidityPoolName
         assert liquidityPool.getAssetOne().getPrice() == someValidPrice
         assert liquidityPool.getAssetTwo().getPrice() == someValidPrice
         assert liquidityPool.getAssetOne().getAmount() == someValidSupply
         assert liquidityPool.getAssetTwo().getAmount() == someValidSupply
+    }
+
+    private APIGatewayProxyRequestEvent createEventRequest(final CreateLiquidityPoolRequest request,
+                                                           final String liquidityPoolName) {
+        String body = objectMapper.writeValueAsString(request)
+        eventRequest = new APIGatewayProxyRequestEvent()
+        eventRequest.setBody(body)
+        eventRequest.setPathParameters(getLiquidityPoolPathParam(liquidityPoolName))
+        return eventRequest
+    }
+
+    private Map<String, String> getLiquidityPoolPathParam(final String liquidityPoolName) {
+        Map<String, String> pathParameters = new HashMap<>()
+        pathParameters.put("liquidityPoolName", liquidityPoolName)
+        return pathParameters
     }
 }

@@ -2,30 +2,33 @@ package com.api.handler.pool;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.config.ErrorMessages;
 import com.config.ServiceLimits;
 import com.model.AssetAmount;
 import com.model.LiquidityPool;
+import com.model.exception.InvalidInputException;
 import com.model.types.Asset;
 import com.serverless.ApiGatewayResponse;
+import com.util.ObjectMapperUtil;
 import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Handler for CreateLiquidityPool API.
  * <p>
- * Creates a liquidity pool for the invoking user.
+ * Creates a liquidity pool.
  */
 @Slf4j
 @Setter
-public class CreateLiquidityPoolHandler implements RequestHandler<CreateLiquidityPoolHandler.CreateLiquidityPoolRequest, ApiGatewayResponse> {
+public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProxyRequestEvent, ApiGatewayResponse> {
 
     private DynamoDBClient dynamoDBClient;
 
@@ -34,43 +37,41 @@ public class CreateLiquidityPoolHandler implements RequestHandler<CreateLiquidit
     }
 
     @Override
-    public ApiGatewayResponse handleRequest(CreateLiquidityPoolRequest input, Context context) {
-        log.info("Received request: {}", input);
-        // validate and collect
-        List<CreateLiquidityPoolRequest.AssetInfo> assetInfoList;
+    public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent eventRequest, Context context) {
+        log.info("Received event request: {}", eventRequest);
+        final String body = eventRequest.getBody();
+        final CreateLiquidityPoolRequest request;
+        final String liquidityPoolName;
+        // validations
+        List<AssetAmount> assetAmountList;
         try {
-            validateAssetInfo(input.getAssetOne());
-            validateAssetInfo(input.getAssetTwo());
-            validateEqualMarketCap(input.getAssetOne(), input.getAssetTwo());
-            assetInfoList = order(input.getAssetOne(), input.getAssetTwo());
-        } catch (IllegalArgumentException e) {
-            log.error(e.getMessage(), e);
+            liquidityPoolName = getLiquidityPoolName(eventRequest.getPathParameters());
+            validateLiquidityPoolName(liquidityPoolName);
+            request = ObjectMapperUtil.toClass(body, CreateLiquidityPoolRequest.class);
+            assetAmountList = Arrays.asList(request.getAssetAmountOne(), request.getAssetAmountTwo());
+            validateBounds(assetAmountList);
+        } catch (InvalidInputException e) {
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
         }
 
         // create internal LiquidityPool object to save in DB
-        final String liquidityPoolName = MessageFormat.format("{0}-{1}",
-                assetInfoList.get(0).getName(), assetInfoList.get(1).getName());
         log.info("Inputs valid. Creating pool with name: {}", liquidityPoolName);
-        CreateLiquidityPoolRequest.AssetInfo assetOne = assetInfoList.get(0);
-        CreateLiquidityPoolRequest.AssetInfo assetTwo = assetInfoList.get(1);
         LiquidityPool liquidityPool = LiquidityPool.builder()
                 .liquidityPoolName(liquidityPoolName)
                 .assetOne(AssetAmount.builder()
-                        .amount(assetOne.getInitialSupply())
-                        .price(assetOne.getInitialPrice())
+                        .amount(request.getAssetAmountOne().getAmount())
+                        .price(request.getAssetAmountOne().getPrice())
                         .build())
                 .assetTwo(AssetAmount.builder()
-                        .amount(assetTwo.getInitialSupply())
-                        .price(assetTwo.getInitialPrice())
+                        .amount(request.getAssetAmountTwo().getAmount())
+                        .price(request.getAssetAmountTwo().getPrice())
                         .build())
                 .build();
 
         // save into dynamoDB
         try {
-            dynamoDBClient.saveLiquidityPool(liquidityPool);
-        } catch (IllegalArgumentException e) {
-            log.error(e.getMessage(), e);
+            dynamoDBClient.createLiquidityPool(liquidityPool);
+        } catch (InvalidInputException e) {
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
         }
 
@@ -78,55 +79,51 @@ public class CreateLiquidityPoolHandler implements RequestHandler<CreateLiquidit
         return ApiGatewayResponse.createEmptyResponse(204, context);
     }
 
-    /**
-     * Given the two assets, orders them into a list, based on the asset name. This ensures a single liquidity pool
-     * for any two pair of assets (ex - Bananas-Apples would become Apples-Bananas).
-     *
-     * @param assetOne
-     * @param assetTwo
-     * @return
-     */
-    private List<CreateLiquidityPoolRequest.AssetInfo> order(final CreateLiquidityPoolRequest.AssetInfo assetOne,
-                                                             final CreateLiquidityPoolRequest.AssetInfo assetTwo) {
-        int compare = assetOne.getName().compareTo(assetTwo.getName());
-        if (compare < 0) {
-            return Arrays.asList(assetOne, assetTwo);
-        } else if (compare > 0) {
-            return Arrays.asList(assetTwo, assetOne);
-        } else {
-            // asset names are same, throw exception
-            throw new IllegalArgumentException(ErrorMessages.DUPLICATE_ASSET);
+    private String getLiquidityPoolName(final Map<String, String> pathParameters) throws InvalidInputException {
+        String liquidityPoolName = pathParameters.get("liquidityPoolName");
+        if (liquidityPoolName == null || liquidityPoolName.isEmpty()) {
+            throw new InvalidInputException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
+        }
+        return liquidityPoolName;
+    }
+
+    private void validateLiquidityPoolName(final String liquidityPoolName) throws InvalidInputException {
+        String assetNames[] = liquidityPoolName.split("-");
+        if (assetNames.length != 2) {
+            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME);
+        }
+        String assetOne = assetNames[0];
+        String assetTwo = assetNames[1];
+        if (!Asset.isValidAssetName(assetOne) || !Asset.isValidAssetName(assetTwo)) {
+            throw new InvalidInputException(ErrorMessages.INVALID_ASSET_NAME);
+        }
+        if (assetOne.equals(assetTwo)) {
+            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME);
+        }
+        if (assetOne.compareTo(assetTwo) >= 0) {
+            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME_ASSET_ORDER);
         }
     }
 
-    /**
-     * Validations on the AssetInfo.
-     *
-     * @param assetInfo
-     */
-    private void validateAssetInfo(final CreateLiquidityPoolRequest.AssetInfo assetInfo) {
-        if (assetInfo == null || assetInfo.getName() == null
-                || assetInfo.getInitialPrice() == null || assetInfo.getInitialSupply() == null) {
-            throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
+    private void validateBounds(final List<AssetAmount> assetAmountList) throws InvalidInputException {
+        // ensure valid numbers
+        for (final AssetAmount assetAmount : assetAmountList) {
+            if (assetAmount.getPrice() < ServiceLimits.MIN_PRICE
+                    || assetAmount.getPrice() > ServiceLimits.MAX_PRICE) {
+                throw new InvalidInputException(ErrorMessages.INVALID_PRICE_RANGE);
+            }
+            if (assetAmount.getAmount() < ServiceLimits.MIN_SUPPLY
+                    || assetAmount.getAmount() > ServiceLimits.MAX_SUPPLY) {
+                throw new InvalidInputException(ErrorMessages.INVALID_SUPPLY_RANGE);
+            }
         }
-        if (!Asset.isValidAssetName(assetInfo.getName())) {
-            throw new IllegalArgumentException(ErrorMessages.INVALID_ASSET_NAME);
-        }
-        if (assetInfo.getInitialPrice() < ServiceLimits.MIN_PRICE
-                || assetInfo.getInitialPrice() > ServiceLimits.MAX_PRICE) {
-            throw new IllegalArgumentException(ErrorMessages.INVALID_PRICE_RANGE);
-        }
-        if (assetInfo.getInitialSupply() < ServiceLimits.MIN_SUPPLY
-                || assetInfo.getInitialSupply() > ServiceLimits.MAX_SUPPLY) {
-            throw new IllegalArgumentException(ErrorMessages.INVALID_SUPPLY_RANGE);
-        }
-    }
 
-    private void validateEqualMarketCap(final CreateLiquidityPoolRequest.AssetInfo assetOne,
-                                        final CreateLiquidityPoolRequest.AssetInfo assetTwo) {
-        if (assetOne.getInitialPrice() * assetOne.getInitialSupply() !=
-                assetTwo.getInitialPrice() * assetTwo.getInitialSupply()) {
-            throw new IllegalArgumentException(ErrorMessages.UNEQUAL_MARKET_CAP_LIQUIDITY_UPDATE);
+        // validate equal market cap
+        AssetAmount assetAmountOne = assetAmountList.get(0);
+        AssetAmount assetAmountTwo = assetAmountList.get(1);
+        if (assetAmountOne.getPrice() * assetAmountOne.getAmount() !=
+                assetAmountTwo.getPrice() * assetAmountTwo.getAmount()) {
+            throw new InvalidInputException(ErrorMessages.UNEQUAL_MARKET_CAP_LIQUIDITY_UPDATE);
         }
     }
 
@@ -135,14 +132,7 @@ public class CreateLiquidityPoolHandler implements RequestHandler<CreateLiquidit
      */
     @Data
     public static class CreateLiquidityPoolRequest {
-        private AssetInfo assetOne;
-        private AssetInfo assetTwo;
-
-        @Data
-        public static class AssetInfo {
-            private String name;
-            private Double initialPrice;
-            private Double initialSupply;
-        }
+        private AssetAmount assetAmountOne;
+        private AssetAmount assetAmountTwo;
     }
 }

@@ -8,6 +8,7 @@ import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
 import com.config.ErrorMessages;
 import com.model.LiquidityPool;
 import com.model.Transaction;
+import com.model.exception.InvalidInputException;
 import com.model.types.TransactionStatus;
 import com.util.LiquidityPoolUtil;
 import lombok.AllArgsConstructor;
@@ -28,7 +29,7 @@ public class DynamoDBClient {
     private static DynamoDBMapperConfig SKIP_NULL_ATTRS_WRITE_CONFIG = DynamoDBMapperConfig.builder()
             .withSaveBehavior(DynamoDBMapperConfig.SaveBehavior.UPDATE_SKIP_NULL_ATTRIBUTES).build();
 
-    public void saveLiquidityPool(final LiquidityPool liquidityPool) {
+    public void createLiquidityPool(final LiquidityPool liquidityPool) throws InvalidInputException {
         try {
             DynamoDBSaveExpression saveExpr = new DynamoDBSaveExpression();
             Map<String, ExpectedAttributeValue> expectedAttributeValueMap = new HashMap<>();
@@ -37,7 +38,8 @@ public class DynamoDBClient {
             saveExpr.setExpected(expectedAttributeValueMap);
             dynamoDBMapper.save(liquidityPool, saveExpr);
         } catch (ConditionalCheckFailedException e) {
-            throw new IllegalArgumentException(ErrorMessages.LIQUIDITY_POOL_ALREADY_EXISTS);
+            log.error(e.getMessage(), e);
+            throw new InvalidInputException(e);
         }
     }
 
