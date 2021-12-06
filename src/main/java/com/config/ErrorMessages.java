@@ -16,6 +16,6 @@ public class ErrorMessages {
     public static String INVALID_LIQUIDITY_POOL_NAME = "Liquidity pool does not exist.";
     public static String UNEQUAL_MARKET_CAP_LIQUIDITY_UPDATE = "Market caps of coins are unequal in this update.";
     public static String NEGATIVE_AMOUNT_TO_SWAP = "Positive number must be provided for amount to swap.";
-    public static String INVALID_CLAIM = "Invalid swap jwt claim.";
+    public static String INVALID_CLAIM = "Invalid swap claim.";
     public static String CLAIM_EXPIRED = "Claim is expired.";
 }

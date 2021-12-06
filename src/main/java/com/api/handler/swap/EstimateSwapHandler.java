@@ -40,13 +40,12 @@ public class EstimateSwapHandler implements RequestHandler<EstimateSwapHandler.E
             validateRequest(input);
             String liquidityPoolName = LiquidityPoolUtil.getLiquidityPoolName(input.getAssetNameIn(), input.getAssetNameOut());
             liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
-            LiquidityPoolUtil.logKValue(liquidityPool);
             swapContract = MarketMakerLogic.createSwapContract(liquidityPool, input);
         } catch (IllegalArgumentException e) {
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
         }
 
-        // return jwt claim token
+        // return claim token
         String encryptedClaim;
         try {
             String swapContractAsString = objectMapper.writeValueAsString(swapContract);

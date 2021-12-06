@@ -8,11 +8,15 @@ import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
 import com.config.ErrorMessages;
 import com.model.LiquidityPool;
 import com.model.Transaction;
+import com.model.TransactionStatus;
+import com.util.LiquidityPoolUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @AllArgsConstructor
 @Slf4j
@@ -40,6 +44,7 @@ public class DynamoDBClient {
         try {
             LiquidityPool liquidityPool = dynamoDBMapper.load(LiquidityPool.class, liquidityPoolName);
             log.info("Returned: {}", liquidityPool);
+            LiquidityPoolUtil.logKValue(liquidityPool);
             if (liquidityPool == null) {
                 throw new IllegalArgumentException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME);
             }
@@ -50,8 +55,15 @@ public class DynamoDBClient {
         }
     }
 
-    public void initializeTransaction(final Transaction transaction) {
+    public String initializeTransaction() {
+        final Transaction transaction = new Transaction();
+        final String transactionId = UUID.randomUUID().toString();
+        transaction.setTransactionId(transactionId);
+        transaction.setTransactionState(TransactionStatus.STARTED.name());
+        Date now = new Date();
+        transaction.setTimeStarted(now);
         dynamoDBMapper.save(transaction);
+        return transactionId;
     }
 
     public void writeTransaction(final Transaction transaction,

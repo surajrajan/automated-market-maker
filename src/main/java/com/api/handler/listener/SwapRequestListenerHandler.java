@@ -62,6 +62,7 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
         final Transaction transaction = new Transaction();
         transaction.setTransactionId(transactionId);
         transaction.setTransactionState(TransactionStatus.FINISHED.name());
+        transaction.setSwapContract(swapContract);
         transaction.setBeforeState(liquidityPool);
         transaction.setAfterState(newLiquidityPool);
         transaction.setTimeCompleted(now);

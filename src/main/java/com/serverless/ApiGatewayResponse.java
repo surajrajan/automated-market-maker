@@ -20,7 +20,6 @@ public class ApiGatewayResponse {
     private final int statusCode;
     private final String body;
     private final Map<String, String> headers;
-    private final boolean isBase64Encoded;
 
     public String toString() {
         return this.body;

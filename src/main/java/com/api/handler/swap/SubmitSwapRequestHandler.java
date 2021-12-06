@@ -11,23 +11,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.model.SwapContract;
 import com.model.SwapRequest;
-import com.model.Transaction;
-import com.model.TransactionStatus;
 import com.serverless.ApiGatewayResponse;
 import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Date;
-import java.util.UUID;
 
 @Slf4j
 @Setter
 public class SubmitSwapRequestHandler implements RequestHandler<SubmitSwapRequestHandler.SubmitSwapRequest, ApiGatewayResponse> {
 
-    final SQSClient sqsClient;
-    final KMSClient kmsClient;
-    final DynamoDBClient dynamoDBClient;
+    private SQSClient sqsClient;
+    private KMSClient kmsClient;
+    private DynamoDBClient dynamoDBClient;
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     public SubmitSwapRequestHandler() {
@@ -39,16 +36,16 @@ public class SubmitSwapRequestHandler implements RequestHandler<SubmitSwapReques
     @Override
     public ApiGatewayResponse handleRequest(SubmitSwapRequest input, Context context) {
         log.info("Received request: {}", input);
-        validateRequest(input);
         final SwapContract swapContract;
         try {
+            validateRequest(input);
             final String encryptedSwapClaim = input.getSwapClaim();
             final String swapClaimAsString = kmsClient.decrypt(encryptedSwapClaim);
             log.info("swapClaimAsString: {}", swapClaimAsString);
             swapContract = objectMapper.readValue(swapClaimAsString, SwapContract.class);
         } catch (IllegalArgumentException | JsonProcessingException e) {
             log.error(e.getMessage(), e);
-            return ApiGatewayResponse.createBadRequest(ErrorMessages.INVALID_CLAIM, context);
+            return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
         }
 
         Date now = new Date();
@@ -57,22 +54,16 @@ public class SubmitSwapRequestHandler implements RequestHandler<SubmitSwapReques
             return ApiGatewayResponse.createBadRequest(ErrorMessages.CLAIM_EXPIRED, context);
         }
 
+        // write to DB that transaction has started
+        final String transactionId = dynamoDBClient.initializeTransaction();
+        log.info("Initialized transactionId: {} to DB.", transactionId);
+
         // create request to put into SQS
         SwapRequest swapRequest = new SwapRequest();
-        final String transactionId = UUID.randomUUID().toString();
         swapRequest.setTransactionId(transactionId);
         swapRequest.setSwapContract(swapContract);
         sqsClient.submitSwap(swapRequest);
         log.info("Submitted transactionId: {} to SQS.", transactionId);
-
-        // write to DB that transaction has started
-        final Transaction transaction = new Transaction();
-        transaction.setTransactionId(transactionId);
-        transaction.setTransactionState(TransactionStatus.STARTED.name());
-        transaction.setTimeStarted(now);
-        transaction.setSwapContract(swapContract);
-        dynamoDBClient.initializeTransaction(transaction);
-        log.info("Saved transaction to DB.");
 
         // return success response
         SubmitSwapResponse response = new SubmitSwapResponse();

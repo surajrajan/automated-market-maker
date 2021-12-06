@@ -20,7 +20,7 @@ class EstimateSwapHandlerSpec extends Specification {
     private static Double someValidAmountToSwap = 5000
     private static String someValidAssetOne = "Apples"
     private static String someValidAssetTwo = "Bananas"
-    private static String someValidEncryptedClaim = "someValidJwtClaim"
+    private static String someValidEncryptedClaim = "someValidEncryptedClaim"
     private static String someValidLiquidityPoolName = "Apples-Bananas"
 
     def context = Mock(Context)
