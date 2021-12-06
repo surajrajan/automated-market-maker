@@ -48,8 +48,8 @@ public class MarketMakerLogic {
             newAssetAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() - outAssetAmount.getAmount());
             newAssetAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() + inAssetAmount.getAmount());
         }
-        newAssetAmountOne.setPrice(constantMarketCapOne / liquidityPool.getAssetOne().getAmount());
-        newAssetAmountTwo.setPrice(constantMarketCapOne / liquidityPool.getAssetTwo().getAmount());
+        newAssetAmountOne.setPrice(constantMarketCapOne / newAssetAmountOne.getAmount());
+        newAssetAmountTwo.setPrice(constantMarketCapOne / newAssetAmountTwo.getAmount());
         newLiquidityPool.setAssetOne(newAssetAmountOne);
         newLiquidityPool.setAssetTwo(newAssetAmountTwo);
         return newLiquidityPool;

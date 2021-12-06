@@ -8,10 +8,7 @@ import com.client.dynamodb.DynamoDBClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logic.MarketMakerLogic;
-import com.model.LiquidityPool;
-import com.model.SwapContract;
-import com.model.SwapRequest;
-import com.model.Transaction;
+import com.model.*;
 import com.util.LiquidityPoolUtil;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -64,10 +61,9 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
         // construct the transaction, containing before and after details of the liquidity pool
         final Transaction transaction = new Transaction();
         transaction.setTransactionId(transactionId);
-        transaction.setTransactionState("Completed");
+        transaction.setTransactionState(TransactionStatus.FINISHED.name());
         transaction.setBeforeState(liquidityPool);
         transaction.setAfterState(newLiquidityPool);
-        transaction.setSwapContract(swapContract);
         transaction.setTimeCompleted(now);
 
         // save the transaction and liquidity pool update

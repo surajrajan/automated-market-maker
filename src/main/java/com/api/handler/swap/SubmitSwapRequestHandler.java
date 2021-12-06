@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.model.SwapContract;
 import com.model.SwapRequest;
 import com.model.Transaction;
+import com.model.TransactionStatus;
 import com.serverless.ApiGatewayResponse;
 import lombok.Data;
 import lombok.Setter;
@@ -67,10 +68,10 @@ public class SubmitSwapRequestHandler implements RequestHandler<SubmitSwapReques
         // write to DB that transaction has started
         final Transaction transaction = new Transaction();
         transaction.setTransactionId(transactionId);
-        transaction.setTransactionState("Started");
-        transaction.setSwapContract(swapContract);
+        transaction.setTransactionState(TransactionStatus.STARTED.name());
         transaction.setTimeStarted(now);
-        dynamoDBClient.saveTransaction(transaction);
+        transaction.setSwapContract(swapContract);
+        dynamoDBClient.initializeTransaction(transaction);
         log.info("Saved transaction to DB.");
 
         // return success response

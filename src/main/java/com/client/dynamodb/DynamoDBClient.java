@@ -1,6 +1,7 @@
 package com.client.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBSaveExpression;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
@@ -18,6 +19,8 @@ import java.util.Map;
 public class DynamoDBClient {
 
     private DynamoDBMapper dynamoDBMapper;
+    private static DynamoDBMapperConfig SKIP_NULL_ATTRS_WRITE_CONFIG = DynamoDBMapperConfig.builder()
+            .withSaveBehavior(DynamoDBMapperConfig.SaveBehavior.UPDATE_SKIP_NULL_ATTRIBUTES).build();
 
     public void saveLiquidityPool(final LiquidityPool liquidityPool) {
         try {
@@ -47,12 +50,13 @@ public class DynamoDBClient {
         }
     }
 
-    public void saveTransaction(final Transaction transaction) {
+    public void initializeTransaction(final Transaction transaction) {
         dynamoDBMapper.save(transaction);
     }
 
-    public void writeTransaction(final Transaction transaction, final LiquidityPool newLiquidityPool) {
-        dynamoDBMapper.save(transaction);
+    public void writeTransaction(final Transaction transaction,
+                                 final LiquidityPool newLiquidityPool) {
+        dynamoDBMapper.save(transaction, SKIP_NULL_ATTRS_WRITE_CONFIG);
         dynamoDBMapper.save(newLiquidityPool);
     }
 }
