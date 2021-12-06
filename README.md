@@ -1,9 +1,33 @@
 # Automated Market Maker
 
-An automated market maker is a type of market.
+An automated market maker (AMM) is a type of market that (without a third party) can automatically allow the swapping of
+any two assets. This works by having a "constant liquidity", or a "supply" of both assets in the pool (which users provide).
+One standard way an AMM calculates price action is using the **constant product formula**, which is what this project
+simulates as trades are made. At a high level, whenever a trade is made in the pool, the market maker will **maintain**
+a constant **K-value**, which is calculated by:
 
-This project simulates an automated market maker by allowing users to create liquidity pools between arbitrary assets,
-place trades / swaps between assets and observe price action as trades are made.
+```
+k = marketCapAssetOne * marketCapAssetTwo
+```
+
+For an overview, see https://www.youtube.com/watch?v=1PbZMudPP5E
+
+This project simulates an AMM by allowing the creation of liquidity pools between arbitrary assets (with configurable
+starting values). Swaps / trades can be simulated / run and the price action can be observed, while the AMM maintainns
+the constant product.
+
+There are a few APIs in the project to help simulate an AMM:
+* **Create Liquidity Pool**
+  * Allows the creation of a liquidity pool between any two assets with starting prices / supply. 
+  * When a pool is created, it **must** have equal starting market cap value
+* **Get Liquidity Pool**
+    * Returns the details of a liquidity pool
+* **Estimate Swap**
+  * Given a liquidity pool, a **swap** must be requested, which will provide a quote / contract for the swap
+  * One of the response parameters is a **claim**, which can then be used to **submit** / finalize the transaction
+* **Submit Swap**
+  * Submits the swap to be executed by placing it into a queue
+  * Swap transactions are handled by the queue, the liquidity pool details are updated, and the transaction is recorded with all the details
 
 ## Setup
 ### Pre-req
