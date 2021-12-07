@@ -16,13 +16,16 @@ This project is a serverless project, which, when deployed, provides APIs that c
   * Allows the creation of a liquidity pool between any two assets with configurable starting prices / supply
   * When a pool is created, it **must** have equal starting market cap value
 * **Get Liquidity Pool**
-  * Returns the details of a liquidity pool
+  * Returns the details of a liquidity pool (along with price / supply details of the two assets)
 * **Estimate Swap**
-  * Given a liquidity pool, a **swap** must be requested, which will provide a quote / contract for the swap
-  * One of the response parameters is a **claim**, which can then be used to **submit** / finalize the transaction
+  * Requires a liquidity pool to exist for the assets being swapped
+  * Given a requested swap, will return a potential contract (in / out amount and prices)
+  * One of the response parameters is an **encrypted swap claim**, which can then be used to **submit** / finalize the
+    transaction with the Submit Swap API
 * **Submit Swap**
-  * Submits the swap to be executed by placing it into a queue
-  * Swap transactions are handled by the queue, the liquidity pool details are updated, and the transaction is recorded with all the details
+  * Submits the swap using the encrypted claim contract
+  * The swap contract is entered in to a queue, which is asynchronously processed
+  * When processed, the transaction history is recorded, and the liquidity pool is updated with new prices / supply
 
 ### How does the AMM maintain prices?
 One standard way an AMM calculates price action is using the **constant product formula** - Whenever a
