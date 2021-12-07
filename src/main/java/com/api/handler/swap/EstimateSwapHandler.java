@@ -8,17 +8,21 @@ import com.client.dynamodb.DynamoDBClient;
 import com.client.kms.KMSClient;
 import com.config.ErrorMessages;
 import com.logic.MarketMakerLogic;
-import com.model.swap.EstimateSwapRequest;
-import com.model.swap.EstimateSwapResponse;
 import com.model.LiquidityPool;
-import com.model.SwapContract;
+import com.model.SwapClaim;
+import com.model.SwapEstimate;
+import com.model.SwapRequest;
 import com.model.exception.InvalidInputException;
 import com.model.types.Asset;
 import com.serverless.ApiGatewayResponse;
 import com.util.LiquidityPoolUtil;
 import com.util.ObjectMapperUtil;
+import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTime;
+
+import java.util.Date;
 
 @Slf4j
 @Setter
@@ -27,6 +31,8 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
     private DynamoDBClient dynamoDBClient;
     private KMSClient kmsClient;
 
+    private static final Integer SWAP_ESTIMATE_EXPIRES_AFTER_IN_SECONDS = 90;
+
     public EstimateSwapHandler() {
         this.dynamoDBClient = DaggerAppDependencies.builder().build().dynamoDBClient();
         this.kmsClient = DaggerAppDependencies.builder().build().kmsClient();
@@ -34,30 +40,37 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
 
     @Override
     public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
+        // validate request and load liquidity pool from swap request
         log.info("Received request event: {}", requestEvent);
         final LiquidityPool liquidityPool;
-        final EstimateSwapRequest estimateSwapRequest;
+        final SwapRequest swapRequest;
         try {
-            estimateSwapRequest = ObjectMapperUtil.toClass(requestEvent.getBody(), EstimateSwapRequest.class);
-            validateRequest(estimateSwapRequest);
-            String liquidityPoolName = LiquidityPoolUtil.inferLiquidityPoolFromSwapRequest(estimateSwapRequest);
+            swapRequest = ObjectMapperUtil.toClass(requestEvent.getBody(), SwapRequest.class);
+            validateRequest(swapRequest);
+            String liquidityPoolName = LiquidityPoolUtil.inferLiquidityPoolFromSwapRequest(swapRequest);
             liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
         } catch (InvalidInputException e) {
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
         }
 
-        SwapContract swapContract = MarketMakerLogic.createSwapContract(liquidityPool, estimateSwapRequest);
+        // create an estimate based on the swap request
+        SwapEstimate swapEstimate = MarketMakerLogic.createSwapEstimate(liquidityPool, swapRequest);
 
-        // set the swap contract with a unique id (determined by the requestId of this estimate invocation)
-        swapContract.setSwapContractId(context.getAwsRequestId());
+        // create a swap claim to "claim" / "execute" this swap later
+        SwapClaim swapClaim = new SwapClaim();
+        // set the swapContractId (determined by the requestId of this estimate invocation)
+        final String swapContractId = context.getAwsRequestId();
+        log.info("swapContractId: {}", swapContractId);
+        Date expiresAt = DateTime.now().plusSeconds(SWAP_ESTIMATE_EXPIRES_AFTER_IN_SECONDS).toDate();
+        swapClaim.setExpiresAt(expiresAt);
+        swapClaim.setSwapContractId(swapContractId);
+        swapClaim.setSwapRequest(swapRequest);
 
-        // return claim token
-        final String encryptedClaim;
+        // issue encrypted claim token, based on swapContractId
+        final String swapClaimToken;
         try {
-            final String swapContractAsString = ObjectMapperUtil.toString(swapContract);
-            log.info("swapContractAsString: {}", swapContractAsString);
-            encryptedClaim = kmsClient.encrypt(swapContractAsString);
-            log.info("encryptedClaim: {}", encryptedClaim);
+            swapClaimToken = kmsClient.encrypt(ObjectMapperUtil.toString(swapClaim));
+            log.info("swapClaimToken: {}", swapClaimToken);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
@@ -65,12 +78,12 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
 
         // return success response
         EstimateSwapResponse estimateSwapResponse = new EstimateSwapResponse();
-        estimateSwapResponse.setSwapContract(swapContract);
-        estimateSwapResponse.setSwapClaim(encryptedClaim);
+        estimateSwapResponse.setSwapEstimate(swapEstimate);
+        estimateSwapResponse.setSwapClaimToken(swapClaimToken);
         return ApiGatewayResponse.createSuccessResponse(estimateSwapResponse, context);
     }
 
-    private void validateRequest(final EstimateSwapRequest request) throws InvalidInputException {
+    private void validateRequest(final SwapRequest request) throws InvalidInputException {
         if (request == null || request.getAssetNameIn() == null
                 || request.getAssetAmountIn() == null || request.getAssetNameOut() == null) {
             throw new InvalidInputException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
@@ -84,5 +97,11 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         if (request.getAssetAmountIn() < 0) {
             throw new InvalidInputException(ErrorMessages.NEGATIVE_AMOUNT_TO_SWAP);
         }
+    }
+
+    @Data
+    public static class EstimateSwapResponse {
+        private String swapClaimToken;
+        private SwapEstimate swapEstimate;
     }
 }

@@ -1,20 +1,17 @@
 package com.logic;
 
 import com.model.AssetAmount;
-import com.model.swap.EstimateSwapRequest;
 import com.model.LiquidityPool;
-import com.model.SwapContract;
+import com.model.SwapEstimate;
+import com.model.SwapRequest;
 import com.util.LiquidityPoolUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
-import java.util.Date;
 import java.util.Map;
 
 @Slf4j
 public class MarketMakerLogic {
 
-    private static final Integer SWAP_EXPIRY_IN_SECONDS = 90;
 
     /**
      * Given an ordered list of .
@@ -22,7 +19,7 @@ public class MarketMakerLogic {
      * @param swapContract
      * @param liquidityPool
      */
-    public static LiquidityPool applySwapToPool(final SwapContract swapContract,
+    public static LiquidityPool applySwapToPool(final SwapEstimate swapContract,
                                                 final LiquidityPool liquidityPool) {
 
         // create a new pool with same new
@@ -55,8 +52,8 @@ public class MarketMakerLogic {
         return newLiquidityPool;
     }
 
-    public static SwapContract createSwapContract(final LiquidityPool liquidityPool,
-                                                  final EstimateSwapRequest request) {
+    public static SwapEstimate createSwapEstimate(final LiquidityPool liquidityPool,
+                                                  final SwapRequest request) {
         // create map to access assetName to assetInfo
         Map<String, AssetAmount> assetAmountList = LiquidityPoolUtil.getAssetNameAssetAmountMap(liquidityPool);
 
@@ -82,8 +79,7 @@ public class MarketMakerLogic {
         log.info("marketCapBeingSwappedIn: {}, newMarketCapIn: {}, newMarketCapOut: {}, assetAmountOut: {}, assetOutNewPrice: {}",
                 marketCapBeingSwappedIn, newMarketCapIn, newMarketCapOut, assetAmountOut, assetOutNewPrice);
 
-        Date expiresAt = DateTime.now().plusSeconds(SWAP_EXPIRY_IN_SECONDS).toDate();
-        SwapContract swapContract = SwapContract.builder()
+        SwapEstimate swapEstimate = SwapEstimate.builder()
                 .inName(request.getAssetNameIn())
                 .inAssetAmount(AssetAmount.builder()
                         .amount(request.getAssetAmountIn())
@@ -94,8 +90,7 @@ public class MarketMakerLogic {
                         .amount(assetAmountOut)
                         .price(assetOutNewPrice)
                         .build())
-                .expiresAt(expiresAt)
                 .build();
-        return swapContract;
+        return swapEstimate;
     }
 }

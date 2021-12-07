@@ -8,7 +8,7 @@ import com.client.dynamodb.DynamoDBClient;
 import com.client.kms.KMSClient;
 import com.client.sqs.SQSClient;
 import com.config.ErrorMessages;
-import com.model.SwapContract;
+import com.model.SwapClaim;
 import com.model.exception.InvalidInputException;
 import com.serverless.ApiGatewayResponse;
 import com.util.ObjectMapperUtil;
@@ -34,41 +34,40 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
 
     @Override
     public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
+        // get swap claim object from encrypted swap claim input
         log.info("Received request event: {}", requestEvent);
         final SubmitSwapRequest submitSwapRequest;
-        final SwapContract swapContract;
+        final SwapClaim swapClaim;
         try {
             submitSwapRequest = ObjectMapperUtil.toClass(requestEvent.getBody(), SubmitSwapRequest.class);
             validateRequest(submitSwapRequest);
-            final String encryptedSwapClaim = submitSwapRequest.getSwapClaim();
-            // convert the encrypted payload into raw SwapContract json
-            final String swapContractAsString = kmsClient.decrypt(encryptedSwapClaim);
-            log.info("swapContractAsString: {}", swapContractAsString);
-            swapContract = ObjectMapperUtil.toClass(swapContractAsString, SwapContract.class);
+            String swapClaimAsString = kmsClient.decrypt(submitSwapRequest.getSwapClaimToken());
+            swapClaim = ObjectMapperUtil.toClass(swapClaimAsString, SwapClaim.class);
+            log.info("Swap claim: {}", swapClaim);
         } catch (InvalidInputException e) {
             log.error(e.getMessage(), e);
             return ApiGatewayResponse.createBadRequest(ErrorMessages.INVALID_CLAIM, context);
         }
 
+        // validate expiry
         Date now = new Date();
-        if (now.after(swapContract.getExpiresAt())) {
+        if (now.after(swapClaim.getExpiresAt())) {
             log.error("Swap is expired. Current time: {}", now);
             return ApiGatewayResponse.createBadRequest(ErrorMessages.CLAIM_EXPIRED, context);
         }
 
         // set transactionId as unique estimate swapContractId
-        String transactionId = swapContract.getSwapContractId();
+        String transactionId = swapClaim.getSwapContractId();
         try {
             // write to DB that transactionId has started
             dynamoDBClient.initializeTransaction(transactionId);
         } catch (InvalidInputException e) {
             return ApiGatewayResponse.createBadRequest(ErrorMessages.CLAIM_ALREADY_USED, context);
         }
-        log.info("Initialized transactionId: {} to DB.", transactionId);
 
-        // create request to put into SQS. set unique contract
-        sqsClient.submitSwapContract(swapContract);
-        log.info("Submitted transactionId: {} to SQS.", transactionId);
+        // submit swap claim to be processed by SQS
+        sqsClient.submitSwap(swapClaim);
+        log.info("Submitted swap claim to SQS.");
 
         // return success response
         SubmitSwapResponse response = new SubmitSwapResponse();
@@ -77,14 +76,14 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
     }
 
     private void validateRequest(final SubmitSwapRequest request) {
-        if (request == null || request.getSwapClaim() == null) {
+        if (request == null || request.getSwapClaimToken() == null) {
             throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
         }
     }
 
     @Data
     public static class SubmitSwapRequest {
-        private String swapClaim;
+        private String swapClaimToken;
     }
 
     @Data

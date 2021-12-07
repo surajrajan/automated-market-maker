@@ -7,7 +7,9 @@ import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.logic.MarketMakerLogic;
 import com.model.LiquidityPool;
-import com.model.SwapContract;
+import com.model.SwapClaim;
+import com.model.SwapEstimate;
+import com.model.SwapRequest;
 import com.model.Transaction;
 import com.model.exception.InvalidInputException;
 import com.model.types.TransactionStatus;
@@ -20,11 +22,11 @@ import java.util.Date;
 
 @Slf4j
 @Setter
-public class SwapContractListenerHandler implements RequestHandler<SQSEvent, Void> {
+public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
 
     private DynamoDBClient dynamoDBClient;
 
-    public SwapContractListenerHandler() {
+    public SwapListenerHandler() {
         this.dynamoDBClient = DaggerAppDependencies.builder().build().dynamoDBClient();
     }
 
@@ -32,35 +34,41 @@ public class SwapContractListenerHandler implements RequestHandler<SQSEvent, Voi
     public Void handleRequest(SQSEvent sqsEvent, Context context) {
         log.info("Received request: {}", sqsEvent);
 
-        final SwapContract swapContract;
+        // parse swap claim details and load liquidity pool details
+        final SwapClaim swapClaim;
         final LiquidityPool liquidityPool;
+        final SwapRequest swapRequest;
         try {
             // only one message at a time
             final String body = sqsEvent.getRecords().get(0).getBody();
             log.info("SQS message body: {}", body);
-            swapContract = ObjectMapperUtil.toClass(body, SwapContract.class);
+            swapClaim = ObjectMapperUtil.toClass(body, SwapClaim.class);
+            swapRequest = swapClaim.getSwapRequest();
             final String liquidityPoolName = LiquidityPoolUtil
-                    .getLiquidityPoolName(swapContract.getInName(), swapContract.getOutName());
+                    .getLiquidityPoolName(swapRequest.getAssetNameIn(), swapRequest.getAssetNameOut());
             liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
         } catch (InvalidInputException e) {
             log.error("Message is invalid format. Failed. Deleting.", e);
             return null;
         }
 
-        final String swapContractId = swapContract.getSwapContractId();
+        final String swapContractId = swapClaim.getSwapContractId();
         log.info("Processing swapContractId: {}", swapContractId);
 
-        // determine updated pool after swap occurs
-        final LiquidityPool newLiquidityPool = MarketMakerLogic.applySwapToPool(swapContract, liquidityPool);
-        log.info("Updated liquidity pool: {}", newLiquidityPool);
+        // calculate a new swap estimate, which may be different from what initially estimated
+        // note, the swap estimate is constructed again here to get the final actual estimate before writing
+        // eventually, a "slippage" parameter could be provided to execute or not execute
+        final SwapEstimate swapEstimate = MarketMakerLogic.createSwapEstimate(liquidityPool, swapRequest);
+        final LiquidityPool newLiquidityPool = MarketMakerLogic.applySwapToPool(swapEstimate, liquidityPool);
 
         // construct the transaction, containing before and after details of the liquidity pool
         final Transaction transaction = new Transaction();
         Date now = new Date();
+
         // construct transactionId as the swapContractId
         transaction.setTransactionId(swapContractId);
         transaction.setTransactionState(TransactionStatus.FINISHED.name());
-        transaction.setSwapContract(swapContract);
+        transaction.setSwapEstimate(swapEstimate);
         transaction.setBeforeState(liquidityPool);
         transaction.setAfterState(newLiquidityPool);
         transaction.setTimeCompleted(now);

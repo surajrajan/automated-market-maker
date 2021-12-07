@@ -71,7 +71,7 @@ functions:
 
   # Listens to and processes wap contracts from the SQS queue
   swapContractListener:
-    handler: com.api.handler.listener.SwapContractListenerHandler
+    handler: com.api.handler.listener.SwapListenerHandler
     events:
       - sqs:
           arn:

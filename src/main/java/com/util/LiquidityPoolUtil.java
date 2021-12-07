@@ -2,8 +2,8 @@ package com.util;
 
 import com.config.ErrorMessages;
 import com.model.AssetAmount;
-import com.model.swap.EstimateSwapRequest;
 import com.model.LiquidityPool;
+import com.model.SwapRequest;
 import com.model.exception.InvalidInputException;
 import com.model.types.Asset;
 import lombok.extern.slf4j.Slf4j;
@@ -72,9 +72,9 @@ public final class LiquidityPoolUtil {
         return liquidityPoolName;
     }
 
-    public static String inferLiquidityPoolFromSwapRequest(final EstimateSwapRequest estimateSwapRequest) {
-        String assetIn = estimateSwapRequest.getAssetNameIn();
-        String assetOut = estimateSwapRequest.getAssetNameOut();
+    public static String inferLiquidityPoolFromSwapRequest(final SwapRequest swapRequest) {
+        String assetIn = swapRequest.getAssetNameIn();
+        String assetOut = swapRequest.getAssetNameOut();
         int compare = assetIn.compareTo(assetOut);
         if (compare < 0) {
             return MessageFormat.format("{0}-{1}", assetIn, assetOut);

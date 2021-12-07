@@ -21,7 +21,7 @@ public class Transaction {
     private String transactionState;
     private LiquidityPool beforeState;
     private LiquidityPool afterState;
-    private SwapContract swapContract;
+    private SwapEstimate swapEstimate;
     private Date timeStarted;
     private Date timeCompleted;
 }

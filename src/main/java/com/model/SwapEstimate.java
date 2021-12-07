@@ -6,18 +6,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
 @DynamoDBDocument
-public class SwapContract {
+public class SwapEstimate {
     private String inName;
     private AssetAmount inAssetAmount;
     private String outName;
     private AssetAmount outAssetAmount;
-    private Date expiresAt;
-    private String swapContractId;
 }

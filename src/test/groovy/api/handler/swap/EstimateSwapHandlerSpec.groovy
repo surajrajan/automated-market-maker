@@ -8,10 +8,9 @@ import com.client.kms.KMSClient
 import com.config.ErrorMessages
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.model.AssetAmount
-import com.model.swap.EstimateSwapRequest
-import com.model.swap.EstimateSwapResponse
 import com.model.LiquidityPool
-import com.model.SwapContract
+import com.model.SwapEstimate
+import com.model.SwapRequest
 import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
 import spock.lang.Subject
@@ -36,10 +35,10 @@ class EstimateSwapHandlerSpec extends Specification {
     def objectMapper = new ObjectMapper()
 
     @Subject
-            EstimateSwapHandler
+    EstimateSwapHandler EstimateSwapHandler
 
     APIGatewayProxyRequestEvent requestEvent
-    EstimateSwapRequest request;
+    SwapRequest request;
     LiquidityPool liquidityPool
 
     def setup() {
@@ -61,7 +60,7 @@ class EstimateSwapHandlerSpec extends Specification {
     @Unroll
     def "given valid request (#type) should return valid swap contract"() {
         given:
-        request = new EstimateSwapRequest()
+        request = new SwapRequest()
         request.setAssetNameIn(inAsset)
         request.setAssetNameOut(outAsset)
         request.setAssetAmountIn(someValidAmountToSwap)
@@ -78,13 +77,11 @@ class EstimateSwapHandlerSpec extends Specification {
             return someValidEncryptedClaim
         }
         assert response.getStatusCode() == 200
-        assert response.getBody().contains(someValidEncryptedClaim)
-        final EstimateSwapResponse estimateSwapResponse = toResponse(response.getBody())
-        final SwapContract swapContract = estimateSwapResponse.getSwapContract()
-        assert swapContract.getInName() == inAsset
-        assert swapContract.getOutName() == outAsset
-        validateSwapContract(swapContract)
-        assert swapContract.getSwapContractId() == someAwsRequestId
+        final EstimateSwapHandler.EstimateSwapResponse estimateSwapResponse
+                = objectMapper.readValue(response.getBody(), EstimateSwapHandler.EstimateSwapResponse.class)
+        final SwapEstimate swapEstimate = estimateSwapResponse.getSwapEstimate()
+        validateSwapEstimate(swapEstimate)
+        assert estimateSwapResponse.getSwapClaimToken() == someValidEncryptedClaim
 
         where:
         type            | inAsset           | outAsset
@@ -92,13 +89,9 @@ class EstimateSwapHandlerSpec extends Specification {
         "reverse order" | someValidAssetTwo | someValidAssetOne
     }
 
-    EstimateSwapResponse toResponse(final String body) {
-        return objectMapper.readValue(body, EstimateSwapResponse.class)
-    }
-
     def "given invalid request (#type) should throw bad request"() {
         given:
-        request = new EstimateSwapRequest()
+        request = new SwapRequest()
         request.setAssetNameIn(inAsset)
         request.setAssetNameOut(outAsset)
         request.setAssetAmountIn(amountToSwap)
@@ -121,13 +114,13 @@ class EstimateSwapHandlerSpec extends Specification {
 
     /**
      * Validates that the swap contract has correct in / out details, along with approximately equal in / out value.
-     * @param swapContract
+     * @param swapEstimate
      */
-    private void validateSwapContract(final SwapContract swapContract) {
-        assert swapContract.getInAssetAmount().getAmount() == someValidAmountToSwap
-        assert swapContract.getInAssetAmount().getPrice() == someValidPrice
+    private void validateSwapEstimate(final SwapEstimate swapEstimate) {
+        assert swapEstimate.getInAssetAmount().getAmount() == someValidAmountToSwap
+        assert swapEstimate.getInAssetAmount().getPrice() == someValidPrice
         final inValue = someValidAmountToSwap * someValidPrice
-        final outValue = swapContract.getOutAssetAmount().getPrice() * swapContract.getOutAssetAmount().getAmount()
+        final outValue = swapEstimate.getOutAssetAmount().getPrice() * swapEstimate.getOutAssetAmount().getAmount()
         assert Math.abs(inValue - outValue) < 0.01
     }
 }
