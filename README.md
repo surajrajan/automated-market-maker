@@ -2,18 +2,16 @@
 
 ![Alt text](images/readme.jpg?raw=true "Title")
 
-An automated market maker (AMM) is an entity in decentralized finance (defi) that allows users to, without a third party,
-automatically swap any two assets - the AMM automatically set / maintain its own prices. This is contrary to traditional
-centralized market systems where prices are set by humans matching limit buy / sell orders. 
+An automated market maker (AMM) is an entity in decentralized finance (DeFi) where users can swap any two assets (if supported)
+**completely autonomously without a third party**. The AMM automatically sets / maintains its own prices. This is contrary
+to traditional centralized market systems where limit buy / sell orders are matched to set the prices.
 
 To best understand how an automated market maker works, see this [youtube video](https://www.youtube.com/watch?v=1PbZMudPP5E) (also
 the credit for the above thumbnail). 
 
 ## Project Overview
-This project is a serverless project, which, when deployed, consists of a lambda functions, dynamodb table, and an SQS
-queue which can simulate swap transactions occurring in an AMM.
+This project is a serverless project, which, when deployed, provides APIs that can help simulate an AMM:
 
-There are a few APIs in the project to help simulate an AMM:
 * **Create Liquidity Pool**
   * Allows the creation of a liquidity pool between any two assets with configurable starting prices / supply
   * When a pool is created, it **must** have equal starting market cap value
@@ -26,86 +24,40 @@ There are a few APIs in the project to help simulate an AMM:
   * Submits the swap to be executed by placing it into a queue
   * Swap transactions are handled by the queue, the liquidity pool details are updated, and the transaction is recorded with all the details
 
-
-## Price Algorithm
-One standard way an AMM calculates price action is using the **constant product formula** - At a high level, whenever a
-trade (swap of assets) is made in the pool, the market maker will **maintain** a constant **K-value**, which is calculated by:
-
+### How does the AMM maintain prices?
+One standard way an AMM calculates price action is using the **constant product formula** - Whenever a
+trade (swap of assets) is made in the pool, the market maker will **maintain a constant k-value**, which is calculated by:
 ```
 k = marketCapAssetOne * marketCapAssetTwo
 ```
-
-Based on this, the supply and prices of the assets are calculated after a swap.
-
+While maintaining this value, the AMM can set before / after prices. The logic for this algorithm is contained in `com.logic.MarketMakerLogic`.
 
 ## Setup
-### Pre-req
+**Pre-Requisites**
 * Set up serverless CLI / AWS CLI
 * Install java 11
-
-### Build
-```
-./gradlew build
-```
-### Deploy
-```
-sls deploy
-```
-**Note:**
 * Create **KMS Symmetric Key** in AWS console
 * Set the Key ARN in `com.client.kms.KMSConstants` before deploying code
 
-Once deployed, you should have the ~following service created:
-```
-Service Information
-service: AutomatedMarketMaker
-stage: dev
-region: us-east-1
-stack: AutomatedMarketMaker-dev
-resources: 37
-api keys:
-  None
-endpoints:
-  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool/{liquidityPoolName}
-  GET - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool/{liquidityPoolName}
-  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool/swap/estimate
-  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool/swap/submit
-functions:
-  createLiquidityPool: AutomatedMarketMaker-dev-createLiquidityPool
-  getLiquidityPool: AutomatedMarketMaker-dev-getLiquidityPool
-  estimateSwap: AutomatedMarketMaker-dev-estimateSwap
-  submitSwap: AutomatedMarketMaker-dev-submitSwap
-  swapRequestListener: AutomatedMarketMaker-dev-swapRequestListener
-```
+**Set Up / Deploy**
+* Clone project: ```git clone https://github.com/surajrajan/automated-market-maker```
+* Build project locally: ```./gradlew build```
+* Deploy project to AWS: ```sls deploy```
+* **Note:** currently supports only ```dev``` stage - configure as necessary in ```serverless.yml```
 
-## Example
+## Constants
+* List of supported assets: `com.model.types.Asset`
 
-### Create Liquidity Pool
-Start by creating a liquidity pool (trading pool) between any two pairs of assets.
+## Examples
+It's easiest to understand the project while interfacing with each of the APIs individually.
 
-**API Name:** `CreateLiquidityPool`
+### CreateLiquidityPool
+Start by creating a liquidity pool (trading pool) between any two pairs of assets. Initial market cap of each asset
+(price * amount) **must be equal**.
+
 ```
 sls invoke --function createLiquidityPool --path apiTestData/createLiquidityPool.json
 ```
-
-**Example Request:**
-```
-{
-  "assetOne": {
-    "name": "Apples",
-    "initialPrice": 100,
-    "initialSupply": 50000
-  },
-  "assetTwo": {
-    "name": "Bananas",
-    "initialPrice": 100,
-    "initialSupply": 50000
-  }
-}
-```
-**Requirements**
-* Market cap of both assets **must** be equal
-* All supported assets are documented in `com.model.types.Asset` enum.
 
 **Example Response**
 ```
@@ -117,10 +69,8 @@ sls invoke --function createLiquidityPool --path apiTestData/createLiquidityPool
 }
 ```
 
-### Get Liquidity Pool
+### GetLiquidityPool
 Gets the details of a liquidity pool.
-
-**API Name:** `GetLiquidityPool`
 ```
 sls invoke --function getLiquidityPool --path apiTestData/getLiquidityPool.json
 ```
@@ -136,22 +86,12 @@ sls invoke --function getLiquidityPool --path apiTestData/getLiquidityPool.json
 }
 ```
 
-### Estimate Swap
-Provides an estimate / swap contract for the swap if valid. Contains a claim token that needs to be be passed
-back on submit swap API to submit the swap.
+### EstimateSwap
+Provides an estimate / swap contract for the swap if valid. Contains a claim token that **must be passed** back to the
+SubmitSwap API to execute it.
 
-**API Name:** `Estimate Swap`
 ```
  sls invoke --function estimateSwap --path apiTestData/estimateSwap.json
-```
-
-**Example Request:**
-```
-{
-  "assetNameIn": "Apples",
-  "assetAmountIn": 7000,
-  "assetNameOut": "Bananas"
-}
 ```
 
 **Example Response:**
@@ -165,17 +105,12 @@ back on submit swap API to submit the swap.
 }
 ```
 
-### Submit Swap
-**API Name:** `Estimate Swap`
+### SubmitSwap
+Submits a SwapContract for execution. The swap contract is encoded by the encrypted swap claim that is provided by the
+EstimateSwap API.
+
 ```
  sls invoke --function submitSwap --path apiTestData/submitSwap.json
-```
-
-**Example Request:**
-```
-{
-  "swapClaim": "someEncryptedClaim"
-}
 ```
 
 **Example Response:**
