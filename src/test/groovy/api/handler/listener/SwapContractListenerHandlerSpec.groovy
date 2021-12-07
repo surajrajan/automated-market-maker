@@ -2,14 +2,14 @@ package api.handler.listener
 
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.SQSEvent
-import com.api.handler.listener.SwapRequestListenerHandler
+import com.api.handler.listener.SwapContractListenerHandler
 import com.client.dynamodb.DynamoDBClient
 import com.model.AssetAmount
 import com.model.LiquidityPool
 import spock.lang.Specification
 import spock.lang.Subject
 
-class SwapRequestListenerHandlerSpec extends Specification {
+class SwapContractListenerHandlerSpec extends Specification {
 
     def context = Mock(Context)
     def dynamoDBClient = Mock(DynamoDBClient)
@@ -22,10 +22,10 @@ class SwapRequestListenerHandlerSpec extends Specification {
     private SQSEvent sqsEvent
 
     @Subject
-    SwapRequestListenerHandler swapRequestListenerHandler
+    SwapContractListenerHandler swapRequestListenerHandler
 
     def setup() {
-        swapRequestListenerHandler = new SwapRequestListenerHandler()
+        swapRequestListenerHandler = new SwapContractListenerHandler()
         swapRequestListenerHandler.setDynamoDBClient(dynamoDBClient)
 
         sqsEvent = new SQSEvent()

@@ -20,11 +20,11 @@ import java.util.Date;
 
 @Slf4j
 @Setter
-public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void> {
+public class SwapContractListenerHandler implements RequestHandler<SQSEvent, Void> {
 
     private DynamoDBClient dynamoDBClient;
 
-    public SwapRequestListenerHandler() {
+    public SwapContractListenerHandler() {
         this.dynamoDBClient = DaggerAppDependencies.builder().build().dynamoDBClient();
     }
 

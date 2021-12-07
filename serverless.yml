@@ -61,7 +61,7 @@ functions:
           path: /pool/swap/estimate
           method: post
 
-  # Submits a swap
+  # Submits a swap contract to be processed
   submitSwap:
     handler: com.api.handler.swap.SubmitSwapHandler
     events:
@@ -69,9 +69,9 @@ functions:
           path: /pool/swap/submit
           method: post
 
-  # Submits a swap
-  swapRequestListener:
-    handler: com.api.handler.listener.SwapRequestListenerHandler
+  # Listens to and processes wap contracts from the SQS queue
+  swapContractListener:
+    handler: com.api.handler.listener.SwapContractListenerHandler
     events:
       - sqs:
           arn:
