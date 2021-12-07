@@ -8,7 +8,8 @@ import com.client.kms.KMSClient
 import com.config.ErrorMessages
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.model.AssetAmount
-import com.model.EstimateSwapRequest
+import com.model.swap.EstimateSwapRequest
+import com.model.swap.EstimateSwapResponse
 import com.model.LiquidityPool
 import com.model.SwapContract
 import com.serverless.ApiGatewayResponse
@@ -78,7 +79,7 @@ class EstimateSwapHandlerSpec extends Specification {
         }
         assert response.getStatusCode() == 200
         assert response.getBody().contains(someValidEncryptedClaim)
-        final EstimateSwapHandler.EstimateSwapResponse estimateSwapResponse = toResponse(response.getBody())
+        final EstimateSwapResponse estimateSwapResponse = toResponse(response.getBody())
         final SwapContract swapContract = estimateSwapResponse.getSwapContract()
         assert swapContract.getInName() == inAsset
         assert swapContract.getOutName() == outAsset
@@ -91,8 +92,8 @@ class EstimateSwapHandlerSpec extends Specification {
         "reverse order" | someValidAssetTwo | someValidAssetOne
     }
 
-    EstimateSwapHandler.EstimateSwapResponse toResponse(final String body) {
-        return objectMapper.readValue(body, EstimateSwapHandler.EstimateSwapResponse.class)
+    EstimateSwapResponse toResponse(final String body) {
+        return objectMapper.readValue(body, EstimateSwapResponse.class)
     }
 
     def "given invalid request (#type) should throw bad request"() {

@@ -2,7 +2,7 @@ package com.util;
 
 import com.config.ErrorMessages;
 import com.model.AssetAmount;
-import com.model.EstimateSwapRequest;
+import com.model.swap.EstimateSwapRequest;
 import com.model.LiquidityPool;
 import com.model.exception.InvalidInputException;
 import com.model.types.Asset;

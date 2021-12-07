@@ -8,7 +8,8 @@ import com.client.dynamodb.DynamoDBClient;
 import com.client.kms.KMSClient;
 import com.config.ErrorMessages;
 import com.logic.MarketMakerLogic;
-import com.model.EstimateSwapRequest;
+import com.model.swap.EstimateSwapRequest;
+import com.model.swap.EstimateSwapResponse;
 import com.model.LiquidityPool;
 import com.model.SwapContract;
 import com.model.exception.InvalidInputException;
@@ -16,7 +17,6 @@ import com.model.types.Asset;
 import com.serverless.ApiGatewayResponse;
 import com.util.LiquidityPoolUtil;
 import com.util.ObjectMapperUtil;
-import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -84,11 +84,5 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         if (request.getAssetAmountIn() < 0) {
             throw new InvalidInputException(ErrorMessages.NEGATIVE_AMOUNT_TO_SWAP);
         }
-    }
-
-    @Data
-    public static class EstimateSwapResponse {
-        private String swapClaim;
-        private SwapContract swapContract;
     }
 }

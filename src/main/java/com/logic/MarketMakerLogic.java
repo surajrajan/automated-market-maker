@@ -1,7 +1,7 @@
 package com.logic;
 
 import com.model.AssetAmount;
-import com.model.EstimateSwapRequest;
+import com.model.swap.EstimateSwapRequest;
 import com.model.LiquidityPool;
 import com.model.SwapContract;
 import com.util.LiquidityPoolUtil;
