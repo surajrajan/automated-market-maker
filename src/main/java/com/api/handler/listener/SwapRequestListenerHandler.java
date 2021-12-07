@@ -8,7 +8,6 @@ import com.client.dynamodb.DynamoDBClient;
 import com.logic.MarketMakerLogic;
 import com.model.LiquidityPool;
 import com.model.SwapContract;
-import com.model.SwapRequest;
 import com.model.Transaction;
 import com.model.exception.InvalidInputException;
 import com.model.types.TransactionStatus;
@@ -33,16 +32,13 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
     public Void handleRequest(SQSEvent sqsEvent, Context context) {
         log.info("Received request: {}", sqsEvent);
 
-        final SwapRequest swapRequest;
         final SwapContract swapContract;
         final LiquidityPool liquidityPool;
         try {
             // only one message at a time
             final String body = sqsEvent.getRecords().get(0).getBody();
             log.info("SQS message body: {}", body);
-            swapRequest = ObjectMapperUtil.toClass(body, SwapRequest.class);
-            // load existing pool
-            swapContract = swapRequest.getSwapContract();
+            swapContract = ObjectMapperUtil.toClass(body, SwapContract.class);
             final String liquidityPoolName = LiquidityPoolUtil
                     .getLiquidityPoolName(swapContract.getInName(), swapContract.getOutName());
             liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
@@ -51,8 +47,8 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
             return null;
         }
 
-        final String transactionId = swapRequest.getTransactionId();
-        log.info("Processing transactionId: {}", transactionId);
+        final String swapContractId = swapContract.getSwapContractId();
+        log.info("Processing swapContractId: {}", swapContractId);
 
         // determine updated pool after swap occurs
         final LiquidityPool newLiquidityPool = MarketMakerLogic.applySwapToPool(swapContract, liquidityPool);
@@ -61,7 +57,8 @@ public class SwapRequestListenerHandler implements RequestHandler<SQSEvent, Void
         // construct the transaction, containing before and after details of the liquidity pool
         final Transaction transaction = new Transaction();
         Date now = new Date();
-        transaction.setTransactionId(transactionId);
+        // construct transactionId as the swapContractId
+        transaction.setTransactionId(swapContractId);
         transaction.setTransactionState(TransactionStatus.FINISHED.name());
         transaction.setSwapContract(swapContract);
         transaction.setBeforeState(liquidityPool);

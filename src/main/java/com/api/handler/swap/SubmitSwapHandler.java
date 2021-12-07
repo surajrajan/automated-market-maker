@@ -9,7 +9,6 @@ import com.client.kms.KMSClient;
 import com.client.sqs.SQSClient;
 import com.config.ErrorMessages;
 import com.model.SwapContract;
-import com.model.SwapRequest;
 import com.model.exception.InvalidInputException;
 import com.serverless.ApiGatewayResponse;
 import com.util.ObjectMapperUtil;
@@ -57,20 +56,18 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
             return ApiGatewayResponse.createBadRequest(ErrorMessages.CLAIM_EXPIRED, context);
         }
 
-        // write to DB that transaction has started
+        // set transactionId as unique estimate swapContractId
         String transactionId = swapContract.getSwapContractId();
         try {
-            dynamoDBClient.initializeTransaction(swapContract.getSwapContractId());
+            // write to DB that transactionId has started
+            dynamoDBClient.initializeTransaction(transactionId);
         } catch (InvalidInputException e) {
             return ApiGatewayResponse.createBadRequest(ErrorMessages.CLAIM_ALREADY_USED, context);
         }
         log.info("Initialized transactionId: {} to DB.", transactionId);
 
-        // create request to put into SQS
-        SwapRequest swapRequest = new SwapRequest();
-        swapRequest.setTransactionId(transactionId);
-        swapRequest.setSwapContract(swapContract);
-        sqsClient.submitSwap(swapRequest);
+        // create request to put into SQS. set unique contract
+        sqsClient.submitSwapContract(swapContract);
         log.info("Submitted transactionId: {} to SQS.", transactionId);
 
         // return success response

@@ -2,7 +2,7 @@
 
 ![Alt text](images/readme.jpg?raw=true "Title")
 
-An automated market maker (AMM) is an entity in decentralized finance (DeFi) where users can swap any two assets (if supported)
+An Automated Market mMaker (AMM) is an entity in decentralized finance (DeFi) where users can swap any two assets
 **completely autonomously without a third party**. The AMM automatically sets / maintains its own prices. This is contrary
 to traditional centralized market systems where limit buy / sell orders are matched to set the prices.
 

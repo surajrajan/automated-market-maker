@@ -7,7 +7,7 @@ import com.client.dynamodb.DynamoDBClient
 import com.client.kms.KMSClient
 import com.client.sqs.SQSClient
 import com.config.ErrorMessages
-import com.model.SwapRequest
+import com.model.SwapContract
 import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
 import spock.lang.Subject
@@ -53,8 +53,8 @@ class SubmitSwapHandlerSpec extends Specification {
         }
 
         1 * dynamoDBClient.initializeTransaction(someSwapContractId)
-        1 * sqsClient.submitSwap(_) >> { SwapRequest swapRequest ->
-            assert !swapRequest.getTransactionId().isEmpty()
+        1 * sqsClient.submitSwapContract(_) >> { SwapContract swapContract ->
+            assert swapContract.getSwapContractId() == someSwapContractId
         }
         assert response.getBody().contains(someSwapContractId)
         assert response.getStatusCode() == 200

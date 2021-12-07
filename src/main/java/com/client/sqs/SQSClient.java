@@ -4,7 +4,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.model.SwapRequest;
+import com.model.SwapContract;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,7 +30,7 @@ public class SQSClient {
      *
      * @param swapRequest
      */
-    public void submitSwap(final SwapRequest swapRequest) {
+    public void submitSwapContract(final SwapContract swapRequest) {
         final String messageBody;
         try {
             messageBody = objectMapper.writeValueAsString(swapRequest);

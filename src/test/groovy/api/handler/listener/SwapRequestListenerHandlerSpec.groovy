@@ -17,22 +17,7 @@ class SwapRequestListenerHandlerSpec extends Specification {
     private String someValidLiquidityPoolName = "Apples-Bananas"
     private Double someValidSupply = 50000
     private Double someValidPrice = 100
-    private String someValidMessageBody = "{\n" +
-            "    \"swapContract\": {\n" +
-            "        \"inName\": \"Apples\",\n" +
-            "        \"inAssetAmount\": {\n" +
-            "            \"amount\": 7000,\n" +
-            "            \"price\": 100\n" +
-            "        },\n" +
-            "        \"outName\": \"Bananas\",\n" +
-            "        \"outAssetAmount\": {\n" +
-            "            \"amount\": 6140.35087719298,\n" +
-            "            \"price\": 113.99999999999999\n" +
-            "        },\n" +
-            "        \"expiresAt\": 1638780346658\n" +
-            "    },\n" +
-            "    \"transactionId\": \"c5935208-9351-41f6-8fa8-30f9ecdd4dea\"\n" +
-            "}";
+    private String someValidMessageBody = "{\"inName\":\"Apples\",\"inAssetAmount\":{\"amount\":7000.0,\"price\":100.0},\"outName\":\"Bananas\",\"outAssetAmount\":{\"amount\":6140.35087719298,\"price\":113.99999999999999},\"expiresAt\":1638844624533,\"swapContractId\":\"4496eb86-9189-439c-9d38-12d1c76509ca\"}";
     private LiquidityPool liquidityPool
     private SQSEvent sqsEvent
 
