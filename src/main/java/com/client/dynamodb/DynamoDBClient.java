@@ -17,8 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import javax.inject.Singleton;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 @AllArgsConstructor
 @Slf4j
@@ -35,6 +33,24 @@ public class DynamoDBClient {
             .withSaveBehavior(DynamoDBMapperConfig.SaveBehavior.UPDATE_SKIP_NULL_ATTRIBUTES).build();
 
     /**
+     * Configures the ability to fail when saving if an existing liquidityPool name already exists.
+     */
+    private static DynamoDBSaveExpression FAIL_ON_EXISTING_LIQUIDITY_POOL = new DynamoDBSaveExpression()
+            .withExpected(new HashMap<String, ExpectedAttributeValue>() {{
+                              put(DBConstants.LIQUIDITY_POOL_NAME_KEY, new ExpectedAttributeValue(false));
+                          }}
+            );
+
+    /**
+     * Configures the ability to fail when saving if an existing transactionId already exists.
+     */
+    private static DynamoDBSaveExpression FAIL_ON_EXISTING_TRANSACTION = new DynamoDBSaveExpression()
+            .withExpected(new HashMap<String, ExpectedAttributeValue>() {{
+                              put(DBConstants.TRANSACTION_ID_KEY, new ExpectedAttributeValue(false));
+                          }}
+            );
+
+    /**
      * Creates a liquidity pool.
      *
      * @param liquidityPool
@@ -43,14 +59,9 @@ public class DynamoDBClient {
     public void createLiquidityPool(final LiquidityPool liquidityPool) throws InvalidInputException {
         try {
             log.info("Creating liquidity pool: {}", liquidityPool);
-            DynamoDBSaveExpression saveExpr = new DynamoDBSaveExpression();
-            Map<String, ExpectedAttributeValue> expectedAttributeValueMap = new HashMap<>();
-            // fail if item already exists
-            expectedAttributeValueMap.put(DBConstants.LIQUIDITY_POOL_NAME_KEY, new ExpectedAttributeValue(false));
-            saveExpr.setExpected(expectedAttributeValueMap);
-            dynamoDBMapper.save(liquidityPool, saveExpr);
+            dynamoDBMapper.save(liquidityPool, FAIL_ON_EXISTING_LIQUIDITY_POOL);
         } catch (ConditionalCheckFailedException e) {
-            log.error(e.getMessage(), e);
+            log.error("Liquidity pool already exists.");
             throw new InvalidInputException(ErrorMessages.LIQUIDITY_POOL_ALREADY_EXISTS, e);
         }
     }
@@ -73,15 +84,19 @@ public class DynamoDBClient {
         return liquidityPool;
     }
 
-    public String initializeTransaction() {
-        final Transaction transaction = new Transaction();
-        final String transactionId = UUID.randomUUID().toString();
-        transaction.setTransactionId(transactionId);
-        transaction.setTransactionState(TransactionStatus.STARTED.name());
-        Date now = new Date();
-        transaction.setTimeStarted(now);
-        dynamoDBMapper.save(transaction);
-        return transactionId;
+    public void initializeTransaction(final String transactionId) throws InvalidInputException {
+        try {
+            log.info("Initializing transaction: {}", transactionId);
+            final Transaction transaction = new Transaction();
+            transaction.setTransactionId(transactionId);
+            transaction.setTransactionState(TransactionStatus.STARTED.name());
+            Date now = new Date();
+            transaction.setTimeStarted(now);
+            dynamoDBMapper.save(transaction, FAIL_ON_EXISTING_TRANSACTION);
+        } catch (ConditionalCheckFailedException e) {
+            log.error("Claim already used.");
+            throw new InvalidInputException(e);
+        }
     }
 
     public void writeTransaction(final Transaction transaction,

@@ -20,7 +20,7 @@ This project is a serverless project, which, when deployed, provides APIs that c
 * **Estimate Swap**
   * Requires a liquidity pool to exist for the assets being swapped
   * Given a requested swap, will return a potential contract (in / out amount and prices)
-  * One of the response parameters is an **encrypted swap claim**, which can then be used to **submit** / finalize the
+  * One of the response parameters is an **one-time use encrypted swap claim**, which can then be used to **submit** / finalize the
     transaction with the Submit Swap API
 * **Submit Swap**
   * Submits the swap using the encrypted claim contract

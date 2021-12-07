@@ -47,6 +47,9 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
 
         SwapContract swapContract = MarketMakerLogic.createSwapContract(liquidityPool, estimateSwapRequest);
 
+        // set the swap contract with a unique id (determined by the requestId of this estimate invocation)
+        swapContract.setSwapContractId(context.getAwsRequestId());
+
         // return claim token
         final String encryptedClaim;
         try {

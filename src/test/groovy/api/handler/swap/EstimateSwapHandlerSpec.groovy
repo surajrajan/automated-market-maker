@@ -25,6 +25,7 @@ class EstimateSwapHandlerSpec extends Specification {
     private static String someValidAssetTwo = "Bananas"
     private static String someValidEncryptedClaim = "someValidEncryptedClaim"
     private static String someValidLiquidityPoolName = "Apples-Bananas"
+    private static String someAwsRequestId = "someAwsRequestId"
 
     def context = Mock(Context)
     def dynamoDBClient = Mock(DynamoDBClient)
@@ -33,7 +34,7 @@ class EstimateSwapHandlerSpec extends Specification {
     def objectMapper = new ObjectMapper()
 
     @Subject
-    EstimateSwapHandler estimateSwapHandler
+            EstimateSwapHandler
 
     APIGatewayProxyRequestEvent requestEvent
     EstimateSwapHandler.EstimateSwapRequest request;
@@ -52,6 +53,7 @@ class EstimateSwapHandlerSpec extends Specification {
         liquidityPool.setAssetOne(someValidAssetAmount)
         liquidityPool.setAssetTwo(someValidAssetAmount)
 
+        context.getAwsRequestId() >> someAwsRequestId
     }
 
     @Unroll
@@ -80,6 +82,7 @@ class EstimateSwapHandlerSpec extends Specification {
         assert swapContract.getInName() == inAsset
         assert swapContract.getOutName() == outAsset
         validateSwapContract(swapContract)
+        assert swapContract.getSwapContractId() == someAwsRequestId
 
         where:
         type            | inAsset           | outAsset

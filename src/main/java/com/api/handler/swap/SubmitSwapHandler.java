@@ -48,7 +48,7 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
             swapContract = ObjectMapperUtil.toClass(swapContractAsString, SwapContract.class);
         } catch (InvalidInputException e) {
             log.error(e.getMessage(), e);
-            return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
+            return ApiGatewayResponse.createBadRequest(ErrorMessages.INVALID_CLAIM, context);
         }
 
         Date now = new Date();
@@ -58,7 +58,12 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
         }
 
         // write to DB that transaction has started
-        final String transactionId = dynamoDBClient.initializeTransaction();
+        String transactionId = swapContract.getSwapContractId();
+        try {
+            dynamoDBClient.initializeTransaction(swapContract.getSwapContractId());
+        } catch (InvalidInputException e) {
+            return ApiGatewayResponse.createBadRequest(ErrorMessages.CLAIM_ALREADY_USED, context);
+        }
         log.info("Initialized transactionId: {} to DB.", transactionId);
 
         // create request to put into SQS

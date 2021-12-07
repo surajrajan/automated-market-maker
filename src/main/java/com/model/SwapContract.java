@@ -19,4 +19,5 @@ public class SwapContract {
     private String outName;
     private AssetAmount outAssetAmount;
     private Date expiresAt;
+    private String swapContractId;
 }

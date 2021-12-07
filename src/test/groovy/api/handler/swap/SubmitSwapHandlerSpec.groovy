@@ -21,9 +21,9 @@ class SubmitSwapHandlerSpec extends Specification {
     def context = Mock(Context)
 
     private final String someValidSwapClaim = "someValidSwapClaim"
-    private final String someValidSwapContract = "{\"inName\":\"Apples\",\"inAssetAmount\":{\"amount\":7000.0,\"price\":100.0},\"outName\":\"Bananas\",\"outAssetAmount\":{\"amount\":6140.35087719298,\"price\":113.99999999999999},\"expiresAt\":4100223964000}"
-    private final String someExpiredSwapContract = "{\"inName\":\"Apples\",\"inAssetAmount\":{\"amount\":7000.0,\"price\":100.0},\"outName\":\"Bananas\",\"outAssetAmount\":{\"amount\":6140.35087719298,\"price\":113.99999999999999},\"expiresAt\":1638774364000}"
-    private final String someTransactionId = "someTransactionId"
+    private final String someValidSwapContract = "{\"inName\":\"Apples\",\"inAssetAmount\":{\"amount\":7000.0,\"price\":100.0},\"outName\":\"Bananas\",\"outAssetAmount\":{\"amount\":6140.35087719298,\"price\":113.99999999999999},\"swapContractId\":\"someSwapContractId\",\"expiresAt\":4100223964000}"
+    private final String someExpiredSwapContract = "{\"inName\":\"Apples\",\"inAssetAmount\":{\"amount\":7000.0,\"price\":100.0},\"outName\":\"Bananas\",\"outAssetAmount\":{\"amount\":6140.35087719298,\"price\":113.99999999999999},\"swapContractId\":\"someSwapContractId\",\"expiresAt\":1638774364000}"
+    private final String someSwapContractId = "someSwapContractId"
 
     private APIGatewayProxyRequestEvent requestEvent
     private SubmitSwapHandler.SubmitSwapRequest submitSwapRequest
@@ -52,13 +52,11 @@ class SubmitSwapHandlerSpec extends Specification {
             return someValidSwapContract
         }
 
-        1 * dynamoDBClient.initializeTransaction() >> {
-            return someTransactionId
-        }
+        1 * dynamoDBClient.initializeTransaction(someSwapContractId)
         1 * sqsClient.submitSwap(_) >> { SwapRequest swapRequest ->
             assert !swapRequest.getTransactionId().isEmpty()
         }
-        assert response.getBody().contains(someTransactionId)
+        assert response.getBody().contains(someSwapContractId)
         assert response.getStatusCode() == 200
     }
 
@@ -83,5 +81,6 @@ class SubmitSwapHandlerSpec extends Specification {
             return "blah"
         }
         assert response.getStatusCode() == 400
+        assert response.getBody().contains(ErrorMessages.INVALID_CLAIM)
     }
 }

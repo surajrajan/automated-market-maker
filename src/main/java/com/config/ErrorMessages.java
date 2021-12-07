@@ -22,4 +22,5 @@ public class ErrorMessages {
     public static String NEGATIVE_AMOUNT_TO_SWAP = "Positive number must be provided for amount to swap.";
     public static String INVALID_CLAIM = "Invalid swap claim.";
     public static String CLAIM_EXPIRED = "Claim is expired.";
+    public static String CLAIM_ALREADY_USED = "Claim is already used.";
 }
