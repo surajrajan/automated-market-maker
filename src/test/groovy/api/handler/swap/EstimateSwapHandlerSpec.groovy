@@ -110,16 +110,4 @@ class EstimateSwapHandlerSpec extends Specification {
         "duplicate asset"     | someValidAssetOne | someValidAssetOne | someValidAmountToSwap | ErrorMessages.DUPLICATE_ASSET
         "invalid swap amount" | someValidAssetOne | someValidAssetTwo | -5                    | ErrorMessages.NEGATIVE_AMOUNT_TO_SWAP
     }
-
-    /**
-     * Validates that the swap contract has correct in / out details, along with approximately equal in / out value.
-     * @param swapEstimate
-     */
-    private void validateSwapEstimate(final SwapEstimate swapEstimate) {
-        assert swapEstimate.getInAssetAmount().getAmount() == someValidAmountToSwap
-        assert swapEstimate.getInAssetAmount().getPrice() == someValidPrice
-        final inValue = someValidAmountToSwap * someValidPrice
-        final outValue = swapEstimate.getOutAssetAmount().getPrice() * swapEstimate.getOutAssetAmount().getAmount()
-        assert Math.abs(inValue - outValue) < 0.01
-    }
 }

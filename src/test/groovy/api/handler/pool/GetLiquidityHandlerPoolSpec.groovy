@@ -58,16 +58,4 @@ class GetLiquidityHandlerPoolSpec extends Specification {
         assert response.getStatusCode() == 400
         assert response.getBody().contains(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME) == true
     }
-
-//    def "given input contains no name should throw bad request"() {
-//        given:
-//        request = new HashMap<>()
-//        when:
-//        ApiGatewayResponse response = getLiquidityPoolHandler.handleRequest(requestEvent, context)
-//
-//        then:
-//        0 * dynamoDBClient.loadLiquidityPool(_)
-//        assert response.getStatusCode() == 400
-//        assert response.getBody().contains(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS) == true
-//    }
 }

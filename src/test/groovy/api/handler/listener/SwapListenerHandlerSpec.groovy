@@ -71,7 +71,7 @@ class SwapListenerHandlerSpec extends Specification {
         1 * marketMakerLogic.createSwapEstimate(liquidityPool, swapRequest) >> {
             return swapEstimate
         }
-        1 * marketMakerLogic.applySwapToPool(swapEstimate, liquidityPool) >> {
+        1 * marketMakerLogic.applySwapEstimateToPool(swapEstimate, liquidityPool) >> {
             return liquidityPool
         }
         1 * dynamoDBClient.writeTransactionAndUpdateLiquidityPool(_, liquidityPool) >> { Transaction transaction, LiquidityPool newLiquidityPool ->

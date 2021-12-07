@@ -60,7 +60,7 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
         // note, the swap estimate is constructed again here to get the final actual estimate before writing
         // eventually, a "slippage" parameter could be provided to execute or not execute
         final SwapEstimate swapEstimate = marketMakerLogic.createSwapEstimate(liquidityPool, swapRequest);
-        final LiquidityPool newLiquidityPool = marketMakerLogic.applySwapToPool(swapEstimate, liquidityPool);
+        final LiquidityPool newLiquidityPool = marketMakerLogic.applySwapEstimateToPool(swapEstimate, liquidityPool);
 
         // construct the transaction, containing before and after details of the liquidity pool
         final Transaction transaction = new Transaction();

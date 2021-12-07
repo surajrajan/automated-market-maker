@@ -100,5 +100,4 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         assert liquidityPool.getAssetOne().getAmount() == someValidSupply
         assert liquidityPool.getAssetTwo().getAmount() == someValidSupply
     }
-
 }
