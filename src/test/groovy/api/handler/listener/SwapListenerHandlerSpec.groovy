@@ -6,7 +6,7 @@ import com.api.handler.listener.SwapListenerHandler
 import com.client.dynamodb.DynamoDBClient
 import com.logic.MarketMakerLogic
 import com.model.LiquidityPool
-import com.model.SwapClaimToken
+import com.client.kms.token.SwapClaimToken
 import com.model.SwapEstimate
 import com.model.SwapRequest
 import com.model.Transaction

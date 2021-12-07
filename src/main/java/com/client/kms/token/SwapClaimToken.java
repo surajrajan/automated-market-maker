@@ -1,5 +1,6 @@
-package com.model;
+package com.client.kms.token;
 
+import com.model.SwapRequest;
 import lombok.Data;
 
 import java.util.Date;

@@ -10,7 +10,7 @@ import com.client.kms.KMSClient;
 import com.config.ErrorMessages;
 import com.logic.MarketMakerLogic;
 import com.model.LiquidityPool;
-import com.model.SwapClaimToken;
+import com.client.kms.token.SwapClaimToken;
 import com.model.SwapEstimate;
 import com.model.SwapRequest;
 import com.model.exception.InvalidInputException;
@@ -59,21 +59,21 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         SwapEstimate swapEstimate = marketMakerLogic.createSwapEstimate(liquidityPool, swapRequest);
 
         // create a swap claim to "claim" / "execute" this swap later
-        SwapClaimToken swapClaim = new SwapClaimToken();
+        SwapClaimToken swapClaimToken = new SwapClaimToken();
         // set the swapContractId (determined by the requestId of this estimate invocation)
         final String swapContractId = context.getAwsRequestId();
         log.info("swapContractId: {}", swapContractId);
         Date expiresAt = DateTime.now().plusSeconds(SWAP_ESTIMATE_EXPIRES_AFTER_IN_SECONDS).toDate();
-        swapClaim.setExpiresAt(expiresAt);
-        swapClaim.setSwapContractId(swapContractId);
-        swapClaim.setSwapRequest(swapRequest);
+        swapClaimToken.setExpiresAt(expiresAt);
+        swapClaimToken.setSwapContractId(swapContractId);
+        swapClaimToken.setSwapRequest(swapRequest);
 
         // issue encrypted claim token, based on swapContractId
-        final String swapClaimToken;
+        String swapClaimTokenAsString;
         try {
-            swapClaimToken = kmsClient.encrypt(ObjectMapperUtil.toString(swapClaim));
+            swapClaimTokenAsString = kmsClient.encrypt(swapClaimToken);
             log.info("swapClaimToken: {}", swapClaimToken);
-        } catch (Exception e) {
+        } catch (InvalidInputException e) {
             log.error(e.getMessage(), e);
             return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
         }
@@ -81,7 +81,7 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         // return success response
         EstimateSwapResponse estimateSwapResponse = new EstimateSwapResponse();
         estimateSwapResponse.setSwapEstimate(swapEstimate);
-        estimateSwapResponse.setSwapClaimToken(swapClaimToken);
+        estimateSwapResponse.setSwapClaimToken(swapClaimTokenAsString);
         return ApiGatewayResponse.createSuccessResponse(estimateSwapResponse, context);
     }
 

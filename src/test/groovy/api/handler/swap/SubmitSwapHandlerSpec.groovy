@@ -8,10 +8,10 @@ import com.client.dynamodb.DynamoDBClient
 import com.client.kms.KMSClient
 import com.client.sqs.SQSClient
 import com.config.ErrorMessages
-import com.model.SwapClaimToken
+import com.client.kms.token.SwapClaimToken
 import com.model.SwapRequest
+import com.model.exception.InvalidInputException
 import com.serverless.ApiGatewayResponse
-import com.util.ObjectMapperUtil
 import org.joda.time.DateTime
 import spock.lang.Specification
 import spock.lang.Subject
@@ -29,9 +29,8 @@ class SubmitSwapHandlerSpec extends Specification {
 
     private APIGatewayProxyRequestEvent requestEvent
     private SubmitSwapRequest submitSwapRequest
-    private SwapClaimToken swapClaim
+    private SwapClaimToken swapClaimToken
     private SwapRequest swapRequest
-    private String swapClaimAsString
 
     @Subject
     SubmitSwapHandler submitSwapRequestHandler
@@ -47,11 +46,10 @@ class SubmitSwapHandlerSpec extends Specification {
 
         requestEvent = TestUtil.createEventRequest(submitSwapRequest)
 
-        swapClaim = new SwapClaimToken()
-        swapClaim.setSwapContractId(someSwapContractId)
-        swapClaim.setSwapRequest(swapRequest)
-        swapClaim.setExpiresAt(new DateTime().plusHours(1).toDate())
-        swapClaimAsString = ObjectMapperUtil.toString(swapClaim)
+        swapClaimToken = new SwapClaimToken()
+        swapClaimToken.setSwapContractId(someSwapContractId)
+        swapClaimToken.setSwapRequest(swapRequest)
+        swapClaimToken.setExpiresAt(new DateTime().plusHours(1).toDate())
     }
 
 
@@ -61,7 +59,7 @@ class SubmitSwapHandlerSpec extends Specification {
 
         then:
         1 * kmsClient.decrypt(someValidSwapClaimToken) >> {
-            return swapClaimAsString
+            return swapClaimToken
         }
 
         1 * dynamoDBClient.initializeTransaction(someSwapContractId)
@@ -74,30 +72,29 @@ class SubmitSwapHandlerSpec extends Specification {
 
     def "given expired claim should throw bad request"() {
         given:
-        swapClaim = new SwapClaimToken()
-        swapClaim.setSwapContractId(someSwapContractId)
-        swapClaim.setSwapRequest(swapRequest)
-        swapClaim.setExpiresAt(new DateTime().minusHours(1).toDate())
-        String expiredClaimAsString = ObjectMapperUtil.toString(swapClaim)
+        swapClaimToken = new SwapClaimToken()
+        swapClaimToken.setSwapContractId(someSwapContractId)
+        swapClaimToken.setSwapRequest(swapRequest)
+        swapClaimToken.setExpiresAt(new DateTime().minusHours(1).toDate())
 
         when:
         ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
 
         then:
         1 * kmsClient.decrypt(someValidSwapClaimToken) >> {
-            return expiredClaimAsString
+            return swapClaimToken
         }
         assert response.getBody().contains(ErrorMessages.CLAIM_EXPIRED)
         assert response.getStatusCode() == 400
     }
 
-    def "given claim is invalid format should throw bad request"() {
+    def "given kms client throws invalid input exception should throw bad request"() {
         when:
         ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
 
         then:
         1 * kmsClient.decrypt(someValidSwapClaimToken) >> {
-            return "blah"
+            throw new InvalidInputException();
         }
         assert response.getStatusCode() == 400
         assert response.getBody().contains(ErrorMessages.INVALID_CLAIM)

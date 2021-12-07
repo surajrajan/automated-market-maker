@@ -29,11 +29,7 @@ provider:
         - "kms:*"
       Resource: "*"
 
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
-
-# you can add packaging information here
+# packaging information
 package:
   artifact: build/distributions/automated-market-maker.zip
 
@@ -45,6 +41,7 @@ functions:
       - http:
           path: /pool/{liquidityPoolName}
           method: post
+
   # Gets a liquidity pool
   getLiquidityPool:
     handler: com.api.handler.pool.GetLiquidityPoolHandler
@@ -58,7 +55,7 @@ functions:
     handler: com.api.handler.swap.EstimateSwapHandler
     events:
       - http:
-          path: /pool/swap/estimate
+          path: /swap/estimate
           method: post
 
   # Submits a swap contract to be processed
@@ -66,7 +63,7 @@ functions:
     handler: com.api.handler.swap.SubmitSwapHandler
     events:
       - http:
-          path: /pool/swap/submit
+          path: /swap/submit
           method: post
 
   # Listens to and processes wap contracts from the SQS queue
@@ -83,12 +80,6 @@ functions:
                 - Ref: AWS::Region
                 - Ref: AWS::AccountId
                 - AutomatedMarketMaker-dev-SwapRequests
-
-
-
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
 
 resources:
   Resources:

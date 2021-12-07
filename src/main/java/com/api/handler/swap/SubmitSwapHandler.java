@@ -10,7 +10,7 @@ import com.client.dynamodb.DynamoDBClient;
 import com.client.kms.KMSClient;
 import com.client.sqs.SQSClient;
 import com.config.ErrorMessages;
-import com.model.SwapClaimToken;
+import com.client.kms.token.SwapClaimToken;
 import com.model.exception.InvalidInputException;
 import com.serverless.ApiGatewayResponse;
 import com.util.ObjectMapperUtil;
@@ -42,9 +42,8 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
         try {
             submitSwapRequest = ObjectMapperUtil.toClass(requestEvent.getBody(), SubmitSwapRequest.class);
             validateRequest(submitSwapRequest);
-            String swapClaimAsString = kmsClient.decrypt(submitSwapRequest.getSwapClaimToken());
-            swapClaimToken = ObjectMapperUtil.toClass(swapClaimAsString, SwapClaimToken.class);
-            log.info("Swap claim: {}", swapClaimToken);
+            swapClaimToken = kmsClient.decrypt(submitSwapRequest.getSwapClaimToken());
+            log.info("swapClaimToken: {}", swapClaimToken);
         } catch (InvalidInputException e) {
             log.error(e.getMessage(), e);
             return ApiGatewayResponse.createBadRequest(ErrorMessages.INVALID_CLAIM, context);
