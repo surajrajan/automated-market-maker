@@ -4,7 +4,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.model.SwapClaim;
+import com.model.SwapClaimToken;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,10 +30,10 @@ public class SQSClient {
      *
      * @param swapRequest
      */
-    public void submitSwap(final SwapClaim swapClaim) {
+    public void submitSwap(final SwapClaimToken swapClaimToken) {
         final String messageBody;
         try {
-            messageBody = objectMapper.writeValueAsString(swapClaim);
+            messageBody = objectMapper.writeValueAsString(swapClaimToken);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize swapRequest", e);
         }

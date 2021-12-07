@@ -18,7 +18,7 @@ public class MarketMakerLogic {
 
 
     /**
-     * Given an ordered list of .
+     * Given a SwapEstimate and LiquidityPool, constructs a new LiquidityPool with the SwapEstimate applied.
      *
      * @param swapEstimate
      * @param liquidityPool
@@ -34,6 +34,7 @@ public class MarketMakerLogic {
         // create map to access assetName to assetInfo to get details about asset being swapped in / out
         Map<String, AssetAmount> nameToAssetAmountMap = LiquidityPoolUtil.getAssetNameAssetAmountMap(liquidityPool);
         String assetNameOne = nameToAssetAmountMap.entrySet().iterator().next().getKey();
+
         // depending on order, make the swap in amount / supply
         if (swapEstimate.getInName().equals(assetNameOne)) {
             newAssetAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() + swapEstimate.getInAssetAmount().getAmount());
@@ -62,11 +63,9 @@ public class MarketMakerLogic {
     public SwapEstimate createSwapEstimate(@NonNull final LiquidityPool liquidityPool,
                                            @NonNull final SwapRequest swapRequest) {
         // create map to access assetName to assetInfo to get details about asset being swapped in / out
-        Map<String, AssetAmount> assetAmountList = LiquidityPoolUtil.getAssetNameAssetAmountMap(liquidityPool);
-        AssetAmount assetInInfo = assetAmountList.get(swapRequest.getAssetNameIn());
-        AssetAmount assetOutInfo = assetAmountList.get(swapRequest.getAssetNameOut());
-        log.info("assetInInfo: {}, assetOutInfo: {}, outSupply: {}, outPrice: {}",
-                assetInInfo, assetOutInfo);
+        Map<String, AssetAmount> nameToAssetAmountMap = LiquidityPoolUtil.getAssetNameAssetAmountMap(liquidityPool);
+        AssetAmount assetInInfo = nameToAssetAmountMap.get(swapRequest.getAssetNameIn());
+        AssetAmount assetOutInfo = nameToAssetAmountMap.get(swapRequest.getAssetNameOut());
 
         // calculate constant k to maintain
         Double constantMarketCap = assetInInfo.getAmount() * assetInInfo.getPrice();

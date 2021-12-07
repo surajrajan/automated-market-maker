@@ -3,6 +3,7 @@ package api.handler.swap
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
 import com.api.handler.swap.EstimateSwapHandler
+import com.api.handler.swap.model.EstimateSwapResponse
 import com.client.dynamodb.DynamoDBClient
 import com.client.kms.KMSClient
 import com.config.ErrorMessages
@@ -77,8 +78,8 @@ class EstimateSwapHandlerSpec extends Specification {
             return swapEstimate
         }
         assert response.getStatusCode() == 200
-        final EstimateSwapHandler.EstimateSwapResponse estimateSwapResponse
-                = objectMapper.readValue(response.getBody(), EstimateSwapHandler.EstimateSwapResponse.class)
+        final EstimateSwapResponse estimateSwapResponse
+                = objectMapper.readValue(response.getBody(), EstimateSwapResponse.class)
         assert estimateSwapResponse.getSwapEstimate() == swapEstimate
         assert estimateSwapResponse.getSwapClaimToken() == someSwapClaimToken
 

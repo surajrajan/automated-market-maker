@@ -101,7 +101,7 @@ SubmitSwap API to execute it.
 ```
 {
     "statusCode": 200,
-    "body": "{\"swapClaim\":\"someEncryptedClaim\",\"swapContract\":{\"inName\":\"Apples\",\"inAssetAmount\":{\"amount\":7000.0,\"price\":100.0},\"outName\":\"Bananas\",\"outAssetAmount\":{\"amount\":6140.35087719298,\"price\":113.99999999999999},\"expiresAt\":1638784090002}}",
+    "body": "{\"swapClaimToken\":\"someEncryptedClaim\",\"swapContract\":{\"inName\":\"Apples\",\"inAssetAmount\":{\"amount\":7000.0,\"price\":100.0},\"outName\":\"Bananas\",\"outAssetAmount\":{\"amount\":6140.35087719298,\"price\":113.99999999999999},\"expiresAt\":1638784090002}}",
     "headers": {
         "RequestId": "d5eee705-b27a-4d4a-bcf8-d7a74e594af0"
     }

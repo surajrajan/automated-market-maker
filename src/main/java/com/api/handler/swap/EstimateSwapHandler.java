@@ -3,13 +3,14 @@ package com.api.handler.swap;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.api.handler.swap.model.EstimateSwapResponse;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.client.kms.KMSClient;
 import com.config.ErrorMessages;
 import com.logic.MarketMakerLogic;
 import com.model.LiquidityPool;
-import com.model.SwapClaim;
+import com.model.SwapClaimToken;
 import com.model.SwapEstimate;
 import com.model.SwapRequest;
 import com.model.exception.InvalidInputException;
@@ -17,7 +18,6 @@ import com.model.types.Asset;
 import com.serverless.ApiGatewayResponse;
 import com.util.LiquidityPoolUtil;
 import com.util.ObjectMapperUtil;
-import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
@@ -58,7 +58,7 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         SwapEstimate swapEstimate = marketMakerLogic.createSwapEstimate(liquidityPool, swapRequest);
 
         // create a swap claim to "claim" / "execute" this swap later
-        SwapClaim swapClaim = new SwapClaim();
+        SwapClaimToken swapClaim = new SwapClaimToken();
         // set the swapContractId (determined by the requestId of this estimate invocation)
         final String swapContractId = context.getAwsRequestId();
         log.info("swapContractId: {}", swapContractId);
@@ -98,11 +98,5 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         if (request.getAssetAmountIn() < 0) {
             throw new InvalidInputException(ErrorMessages.NEGATIVE_AMOUNT_TO_SWAP);
         }
-    }
-
-    @Data
-    public static class EstimateSwapResponse {
-        private String swapClaimToken;
-        private SwapEstimate swapEstimate;
     }
 }

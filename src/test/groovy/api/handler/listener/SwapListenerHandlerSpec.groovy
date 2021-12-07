@@ -6,7 +6,7 @@ import com.api.handler.listener.SwapListenerHandler
 import com.client.dynamodb.DynamoDBClient
 import com.logic.MarketMakerLogic
 import com.model.LiquidityPool
-import com.model.SwapClaim
+import com.model.SwapClaimToken
 import com.model.SwapEstimate
 import com.model.SwapRequest
 import com.model.Transaction
@@ -30,7 +30,7 @@ class SwapListenerHandlerSpec extends Specification {
     private LiquidityPool liquidityPool
     private SQSEvent sqsEvent
     private SwapEstimate swapEstimate
-    private SwapClaim swapClaim
+    private SwapClaimToken swapClaim
     private SwapRequest swapRequest
     private String swapClaimAsString
 
@@ -48,7 +48,7 @@ class SwapListenerHandlerSpec extends Specification {
         swapRequest.setAssetNameOut(someValidAssetTwo)
         swapRequest.setAssetAmountIn(someValidAmountToSwap)
 
-        swapClaim = new SwapClaim()
+        swapClaim = new SwapClaimToken()
         swapClaim.setSwapContractId(someValidSwapContractId)
         swapClaim.setSwapRequest(swapRequest)
         swapClaim.setExpiresAt(new DateTime().plusHours(1).toDate())

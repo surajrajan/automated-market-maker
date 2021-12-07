@@ -7,7 +7,7 @@ import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.logic.MarketMakerLogic;
 import com.model.LiquidityPool;
-import com.model.SwapClaim;
+import com.model.SwapClaimToken;
 import com.model.SwapEstimate;
 import com.model.SwapRequest;
 import com.model.Transaction;
@@ -36,15 +36,15 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
         log.info("Received request: {}", sqsEvent);
 
         // parse swap claim details and load liquidity pool details
-        final SwapClaim swapClaim;
+        final SwapClaimToken swapClaimToken;
         final LiquidityPool liquidityPool;
         final SwapRequest swapRequest;
         try {
             // only one message at a time
             final String body = sqsEvent.getRecords().get(0).getBody();
             log.info("SQS message body: {}", body);
-            swapClaim = ObjectMapperUtil.toClass(body, SwapClaim.class);
-            swapRequest = swapClaim.getSwapRequest();
+            swapClaimToken = ObjectMapperUtil.toClass(body, SwapClaimToken.class);
+            swapRequest = swapClaimToken.getSwapRequest();
             final String liquidityPoolName = LiquidityPoolUtil
                     .getLiquidityPoolName(swapRequest.getAssetNameIn(), swapRequest.getAssetNameOut());
             liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
@@ -53,7 +53,7 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
             return null;
         }
 
-        final String swapContractId = swapClaim.getSwapContractId();
+        final String swapContractId = swapClaimToken.getSwapContractId();
         log.info("Processing swapContractId: {}", swapContractId);
 
         // calculate a new swap estimate, which may be different from what initially estimated

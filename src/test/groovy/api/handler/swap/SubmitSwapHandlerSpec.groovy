@@ -3,11 +3,12 @@ package api.handler.swap
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
 import com.api.handler.swap.SubmitSwapHandler
+import com.api.handler.swap.model.SubmitSwapRequest
 import com.client.dynamodb.DynamoDBClient
 import com.client.kms.KMSClient
 import com.client.sqs.SQSClient
 import com.config.ErrorMessages
-import com.model.SwapClaim
+import com.model.SwapClaimToken
 import com.model.SwapRequest
 import com.serverless.ApiGatewayResponse
 import com.util.ObjectMapperUtil
@@ -27,8 +28,8 @@ class SubmitSwapHandlerSpec extends Specification {
     private final String someSwapContractId = "someSwapContractId"
 
     private APIGatewayProxyRequestEvent requestEvent
-    private SubmitSwapHandler.SubmitSwapRequest submitSwapRequest
-    private SwapClaim swapClaim
+    private SubmitSwapRequest submitSwapRequest
+    private SwapClaimToken swapClaim
     private SwapRequest swapRequest
     private String swapClaimAsString
 
@@ -41,12 +42,12 @@ class SubmitSwapHandlerSpec extends Specification {
         submitSwapRequestHandler.setDynamoDBClient(dynamoDBClient)
         submitSwapRequestHandler.setKmsClient(kmsClient)
 
-        submitSwapRequest = new SubmitSwapHandler.SubmitSwapRequest()
+        submitSwapRequest = new SubmitSwapRequest()
         submitSwapRequest.setSwapClaimToken(someValidSwapClaimToken)
 
         requestEvent = TestUtil.createEventRequest(submitSwapRequest)
 
-        swapClaim = new SwapClaim()
+        swapClaim = new SwapClaimToken()
         swapClaim.setSwapContractId(someSwapContractId)
         swapClaim.setSwapRequest(swapRequest)
         swapClaim.setExpiresAt(new DateTime().plusHours(1).toDate())
@@ -64,7 +65,7 @@ class SubmitSwapHandlerSpec extends Specification {
         }
 
         1 * dynamoDBClient.initializeTransaction(someSwapContractId)
-        1 * sqsClient.submitSwap(_) >> { SwapClaim swapClaim ->
+        1 * sqsClient.submitSwap(_) >> { SwapClaimToken swapClaim ->
             assert swapClaim.getSwapContractId() == someSwapContractId
         }
         assert response.getBody().contains(someSwapContractId)
@@ -73,7 +74,7 @@ class SubmitSwapHandlerSpec extends Specification {
 
     def "given expired claim should throw bad request"() {
         given:
-        swapClaim = new SwapClaim()
+        swapClaim = new SwapClaimToken()
         swapClaim.setSwapContractId(someSwapContractId)
         swapClaim.setSwapRequest(swapRequest)
         swapClaim.setExpiresAt(new DateTime().minusHours(1).toDate())

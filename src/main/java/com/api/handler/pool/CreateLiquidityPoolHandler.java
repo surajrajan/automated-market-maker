@@ -3,6 +3,7 @@ package com.api.handler.pool;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.api.handler.pool.model.CreateLiquidityPoolRequest;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.config.ErrorMessages;
@@ -13,7 +14,6 @@ import com.model.exception.InvalidInputException;
 import com.serverless.ApiGatewayResponse;
 import com.util.LiquidityPoolUtil;
 import com.util.ObjectMapperUtil;
-import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -98,14 +98,5 @@ public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProx
                 assetAmountTwo.getPrice() * assetAmountTwo.getAmount()) {
             throw new InvalidInputException(ErrorMessages.UNEQUAL_MARKET_CAP_LIQUIDITY_UPDATE);
         }
-    }
-
-    /**
-     * Input request.
-     */
-    @Data
-    public static class CreateLiquidityPoolRequest {
-        private AssetAmount assetAmountOne;
-        private AssetAmount assetAmountTwo;
     }
 }

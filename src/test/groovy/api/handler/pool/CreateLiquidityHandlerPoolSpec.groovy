@@ -3,7 +3,7 @@ package api.handler.pool
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
 import com.api.handler.pool.CreateLiquidityPoolHandler
-import com.api.handler.pool.CreateLiquidityPoolHandler.CreateLiquidityPoolRequest
+import com.api.handler.pool.model.CreateLiquidityPoolRequest
 import com.client.dynamodb.DynamoDBClient
 import com.config.ErrorMessages
 import com.model.AssetAmount
@@ -20,7 +20,7 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
     def context = Mock(Context)
     def dynamoDBClient = Mock(DynamoDBClient)
 
-    private CreateLiquidityPoolHandler.CreateLiquidityPoolRequest request;
+    private CreateLiquidityPoolRequest request;
     private APIGatewayProxyRequestEvent requestEvent;
     private Integer someValidSupply = 100
     private Integer someValidPrice = 10
@@ -35,7 +35,7 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
     def setup() {
         createLiquidityPoolHandler = new CreateLiquidityPoolHandler();
         createLiquidityPoolHandler.setDynamoDBClient(dynamoDBClient)
-        request = new CreateLiquidityPoolHandler.CreateLiquidityPoolRequest()
+        request = new CreateLiquidityPoolRequest()
         request.setAssetAmountOne(someValidAssetAmount)
         request.setAssetAmountTwo(someValidAssetAmount)
         requestEvent = TestUtil.createEventRequest(request, someValidLiquidityPoolName)
