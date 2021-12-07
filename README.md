@@ -2,33 +2,33 @@
 
 ![Alt text](images/readme.jpg?raw=true "Title")
 
-An Automated Market Maker (AMM) is an entity in decentralized finance (DeFi) where users can swap any two assets
-**completely autonomously without a third party**. The AMM automatically sets / maintains its own prices. This is contrary
-to traditional centralized market systems where limit buy / sell orders are matched to set the prices.
+An Automated Market Maker (AMM) is an entity in decentralized finance (DeFi) where users can swap two assets
+**completely autonomously without a third party**. The AMM automatically sets / maintains of the prices of the assets
+as swaps / trades are made. This is contrary to traditional centralized market systems where limit buy / sell orders
+are matched to set the prices.
 
 To best understand how an automated market maker works, see this [youtube video](https://www.youtube.com/watch?v=1PbZMudPP5E) (also
 the credit for the above thumbnail). 
 
 ## Project Overview
 This project is an AWS [serverless](https://www.serverless.com/framework/docs) project, which, when deployed, provides
-a set APIs that can help simulate an AMM:
+a set APIs (each backed by a Lambda function), interacting with DynamoDB, SQS, and KMS that can help simulate an AMM:
 
-* **Create Liquidity Pool**
-  * Creates liquidity pool between any two assets (allowed assets are in `com.model.types.Asset`)
-  * Initial prices and supply must be set for both assets
-  * When a pool is created, both assets **must** have equal starting market cap value
-* **Get Liquidity Pool**
-  * Returns the details of a liquidity pool, along with price / supply details both assets
-* **Estimate Swap**
-  * Estimates the details of performing an input **swap**
-  * Requires a liquidity pool to exist for the assets being swapped
-  * Given a requested swap, will return a potential contract (in / out amount and prices)
-  * One of the response parameters is an **one-time use encrypted swap claim**, which can then be used to **submit** / finalize the
-    transaction with submit swap API
-* **Submit Swap**
-  * Submits the swap using the encrypted claim contract
-  * The swap contract is entered in to a queue, which is asynchronously processed
-  * When processed, the transaction history is recorded, and the liquidity pool is updated with new prices / supply
+* **Create Liquidity Pool:** Creates ```LiquidityPool``` between any two assets. Allowed asset names are in `com.model.types.Asset`.
+    Initial prices / supply of both assets must be set such that the **market cap** of each is equal. Stored in the
+    DynamoDB LiquidityPools table. 
+* **Get Liquidity Pool:** Returns the details of a liquidity pool, along with price / supply details both assets.
+* **Estimate Swap:** Estimates the details of performing an ```SwapRequest```. Requires a liquidity pool to exist for 
+    the assets being swapped. Response is a ```SwapEstimate```, which details the amount / price of the asset received
+    back. Also returns a ```swapClaimToken```, which is a **one-time use token** to redeem / submit this transaction. It
+    is not guaranteed that the actual price will be exactly the same as the estimate, but it will be processed.
+* **Submit Swap:** Given a ```swapClaimToken```, will queue the underlying ```SwapRequest``` request into an SQS queue,
+    which will then be processed in real time. As the swap claim is processed, a new ```SwapEstimate``` is constructed.
+    This swap is then **executed** by updating the LiquidityPool. The ```Transaction``` is also recorded in the DynamoDB
+    Transactions table.
+
+**Note:** In a real AMM, users would have the ability to set a *slippage* parameter that prevents actual swap to be too
+far off from the initial estimate.
 
 ### How does the AMM maintain prices?
 One standard way an AMM calculates price action is using the **constant product formula** - Whenever a

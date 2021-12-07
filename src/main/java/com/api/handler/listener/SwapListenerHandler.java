@@ -29,6 +29,7 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
 
     public SwapListenerHandler() {
         this.dynamoDBClient = DaggerAppDependencies.builder().build().dynamoDBClient();
+        this.marketMakerLogic = new MarketMakerLogic();
     }
 
     @Override

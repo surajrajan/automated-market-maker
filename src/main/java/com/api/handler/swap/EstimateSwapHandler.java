@@ -37,6 +37,7 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
     public EstimateSwapHandler() {
         this.dynamoDBClient = DaggerAppDependencies.builder().build().dynamoDBClient();
         this.kmsClient = DaggerAppDependencies.builder().build().kmsClient();
+        this.marketMakerLogic = new MarketMakerLogic();
     }
 
     @Override
