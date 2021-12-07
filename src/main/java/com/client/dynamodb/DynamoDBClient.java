@@ -51,7 +51,7 @@ public class DynamoDBClient {
             dynamoDBMapper.save(liquidityPool, saveExpr);
         } catch (ConditionalCheckFailedException e) {
             log.error(e.getMessage(), e);
-            throw new InvalidInputException(e);
+            throw new InvalidInputException(ErrorMessages.LIQUIDITY_POOL_ALREADY_EXISTS, e);
         }
     }
 

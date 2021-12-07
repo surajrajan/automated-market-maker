@@ -66,7 +66,7 @@ functions:
     handler: com.api.handler.swap.SubmitSwapHandler
     events:
       - http:
-          path: /pool/swap/estimate
+          path: /pool/swap/submit
           method: post
 
   # Submits a swap

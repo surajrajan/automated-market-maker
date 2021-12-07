@@ -61,6 +61,9 @@ public final class LiquidityPoolUtil {
 
     public static String extractLiquidityPoolNameFromPathParams(final Map<String, String> pathParameters)
             throws InvalidInputException {
+        if (pathParameters == null) {
+            throw new InvalidInputException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
+        }
         String liquidityPoolName = pathParameters.get("liquidityPoolName");
         if (liquidityPoolName == null || liquidityPoolName.isEmpty()) {
             throw new InvalidInputException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);

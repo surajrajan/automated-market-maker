@@ -1,12 +1,6 @@
 {
-  "assetOne": {
-    "name": "Apples",
-    "initialPrice": 100,
-    "initialSupply": 50000
+  "pathParameters": {
+    "liquidityPoolName": "Apples-Bananas"
   },
-  "assetTwo": {
-    "name": "Bananas",
-    "initialPrice": 100,
-    "initialSupply": 50000
-  }
+  "body": "{\"assetAmountOne\":{\"price\":100,\"amount\":50000},\"assetAmountTwo\":{\"price\":100,\"amount\":50000}}"
 }

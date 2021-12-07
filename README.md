@@ -1,10 +1,33 @@
 # Automated Market Maker
 
-An automated market maker (AMM) is an entity that, without a third party, can automatically allow the swapping of
-any two assets and set / maintain prices of the assets in the market. This is contrary to traditional centralized market
-systems that set prices by matching limit buy / sell orders. An AMM works by having a "constant liquidity", or a "supply"
-of both assets to be swapped in a dedicated pool.
+![Alt text](images/readme.jpg?raw=true "Title")
 
+An automated market maker (AMM) is an entity in decentralized finance (defi) that allows users to, without a third party,
+automatically swap any two assets - the AMM automatically set / maintain its own prices. This is contrary to traditional
+centralized market systems where prices are set by humans matching limit buy / sell orders. 
+
+To best understand how an automated market maker works, see this [youtube video](https://www.youtube.com/watch?v=1PbZMudPP5E) (also
+the credit for the above thumbnail). 
+
+## Project Overview
+This project is a serverless project, which, when deployed, consists of a lambda functions, dynamodb table, and an SQS
+queue which can simulate swap transactions occurring in an AMM.
+
+There are a few APIs in the project to help simulate an AMM:
+* **Create Liquidity Pool**
+  * Allows the creation of a liquidity pool between any two assets with configurable starting prices / supply
+  * When a pool is created, it **must** have equal starting market cap value
+* **Get Liquidity Pool**
+  * Returns the details of a liquidity pool
+* **Estimate Swap**
+  * Given a liquidity pool, a **swap** must be requested, which will provide a quote / contract for the swap
+  * One of the response parameters is a **claim**, which can then be used to **submit** / finalize the transaction
+* **Submit Swap**
+  * Submits the swap to be executed by placing it into a queue
+  * Swap transactions are handled by the queue, the liquidity pool details are updated, and the transaction is recorded with all the details
+
+
+## Price Algorithm
 One standard way an AMM calculates price action is using the **constant product formula** - At a high level, whenever a
 trade (swap of assets) is made in the pool, the market maker will **maintain** a constant **K-value**, which is calculated by:
 
@@ -13,21 +36,7 @@ k = marketCapAssetOne * marketCapAssetTwo
 ```
 
 Based on this, the supply and prices of the assets are calculated after a swap.
-For a more detailed overview, see https://www.youtube.com/watch?v=1PbZMudPP5E
 
-
-There are a few APIs in the project to help simulate an AMM:
-* **Create Liquidity Pool**
-  * Allows the creation of a liquidity pool between any two assets with configurable starting prices / supply
-  * When a pool is created, it **must** have equal starting market cap value
-* **Get Liquidity Pool**
-    * Returns the details of a liquidity pool
-* **Estimate Swap**
-  * Given a liquidity pool, a **swap** must be requested, which will provide a quote / contract for the swap
-  * One of the response parameters is a **claim**, which can then be used to **submit** / finalize the transaction
-* **Submit Swap**
-  * Submits the swap to be executed by placing it into a queue
-  * Swap transactions are handled by the queue, the liquidity pool details are updated, and the transaction is recorded with all the details
 
 ## Setup
 ### Pre-req
@@ -57,10 +66,10 @@ resources: 37
 api keys:
   None
 endpoints:
-  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool
+  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool/{liquidityPoolName}
   GET - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool/{liquidityPoolName}
-  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/swap/estimate
-  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/swap/submit
+  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool/swap/estimate
+  POST - https://lj3ynbqoh1.execute-api.us-east-1.amazonaws.com/dev/pool/swap/submit
 functions:
   createLiquidityPool: AutomatedMarketMaker-dev-createLiquidityPool
   getLiquidityPool: AutomatedMarketMaker-dev-getLiquidityPool
