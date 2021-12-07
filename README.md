@@ -2,7 +2,7 @@
 
 ![Alt text](images/readme.jpg?raw=true "Title")
 
-An Automated Market mMaker (AMM) is an entity in decentralized finance (DeFi) where users can swap any two assets
+An Automated Market Maker (AMM) is an entity in decentralized finance (DeFi) where users can swap any two assets
 **completely autonomously without a third party**. The AMM automatically sets / maintains its own prices. This is contrary
 to traditional centralized market systems where limit buy / sell orders are matched to set the prices.
 
@@ -10,18 +10,21 @@ To best understand how an automated market maker works, see this [youtube video]
 the credit for the above thumbnail). 
 
 ## Project Overview
-This project is a serverless project, which, when deployed, provides APIs that can help simulate an AMM:
+This project is an AWS [serverless](https://www.serverless.com/framework/docs) project, which, when deployed, provides
+a set APIs that can help simulate an AMM:
 
 * **Create Liquidity Pool**
-  * Allows the creation of a liquidity pool between any two assets with configurable starting prices / supply
-  * When a pool is created, it **must** have equal starting market cap value
+  * Creates liquidity pool between any two assets (allowed assets are in `com.model.types.Asset`)
+  * Initial prices and supply must be set for both assets
+  * When a pool is created, both assets **must** have equal starting market cap value
 * **Get Liquidity Pool**
-  * Returns the details of a liquidity pool (along with price / supply details of the two assets)
+  * Returns the details of a liquidity pool, along with price / supply details both assets
 * **Estimate Swap**
+  * Estimates the details of performing an input **swap**
   * Requires a liquidity pool to exist for the assets being swapped
   * Given a requested swap, will return a potential contract (in / out amount and prices)
   * One of the response parameters is an **one-time use encrypted swap claim**, which can then be used to **submit** / finalize the
-    transaction with the Submit Swap API
+    transaction with submit swap API
 * **Submit Swap**
   * Submits the swap using the encrypted claim contract
   * The swap contract is entered in to a queue, which is asynchronously processed
@@ -47,9 +50,6 @@ While maintaining this value, the AMM can set before / after prices. The logic f
 * Build project locally: ```./gradlew build```
 * Deploy project to AWS: ```sls deploy```
 * **Note:** currently supports only ```dev``` stage - configure as necessary in ```serverless.yml```
-
-## Constants
-* List of supported assets: `com.model.types.Asset`
 
 ## Examples
 It's easiest to understand the project while interfacing with each of the APIs individually.

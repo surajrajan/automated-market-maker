@@ -25,6 +25,7 @@ import java.util.Date;
 public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
 
     private DynamoDBClient dynamoDBClient;
+    private MarketMakerLogic marketMakerLogic;
 
     public SwapListenerHandler() {
         this.dynamoDBClient = DaggerAppDependencies.builder().build().dynamoDBClient();
@@ -58,8 +59,8 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
         // calculate a new swap estimate, which may be different from what initially estimated
         // note, the swap estimate is constructed again here to get the final actual estimate before writing
         // eventually, a "slippage" parameter could be provided to execute or not execute
-        final SwapEstimate swapEstimate = MarketMakerLogic.createSwapEstimate(liquidityPool, swapRequest);
-        final LiquidityPool newLiquidityPool = MarketMakerLogic.applySwapToPool(swapEstimate, liquidityPool);
+        final SwapEstimate swapEstimate = marketMakerLogic.createSwapEstimate(liquidityPool, swapRequest);
+        final LiquidityPool newLiquidityPool = marketMakerLogic.applySwapToPool(swapEstimate, liquidityPool);
 
         // construct the transaction, containing before and after details of the liquidity pool
         final Transaction transaction = new Transaction();
@@ -69,12 +70,10 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
         transaction.setTransactionId(swapContractId);
         transaction.setTransactionState(TransactionStatus.FINISHED.name());
         transaction.setSwapEstimate(swapEstimate);
-        transaction.setBeforeState(liquidityPool);
-        transaction.setAfterState(newLiquidityPool);
         transaction.setTimeCompleted(now);
 
         // save the transaction and liquidity pool update
-        dynamoDBClient.writeTransaction(transaction, newLiquidityPool);
+        dynamoDBClient.writeTransactionAndUpdateLiquidityPool(transaction, newLiquidityPool);
         log.info("Updated transaction and pool in dynamoDB.");
         return null;
     }

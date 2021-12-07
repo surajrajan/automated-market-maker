@@ -4,7 +4,12 @@ import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import com.api.handler.listener.SwapListenerHandler
 import com.client.dynamodb.DynamoDBClient
-import com.model.*
+import com.logic.MarketMakerLogic
+import com.model.LiquidityPool
+import com.model.SwapClaim
+import com.model.SwapEstimate
+import com.model.SwapRequest
+import com.model.Transaction
 import com.model.types.TransactionStatus
 import com.util.ObjectMapperUtil
 import org.joda.time.DateTime
@@ -15,16 +20,16 @@ class SwapListenerHandlerSpec extends Specification {
 
     def context = Mock(Context)
     def dynamoDBClient = Mock(DynamoDBClient)
+    def marketMakerLogic = Mock(MarketMakerLogic)
 
     private static Double someValidAmountToSwap = 5000
     private static String someValidAssetOne = "Apples"
     private static String someValidAssetTwo = "Bananas"
     private String someValidLiquidityPoolName = "Apples-Bananas"
     private String someValidSwapContractId = "someValidSwapContractId"
-    private Double someValidSupply = 50000
-    private Double someValidPrice = 100
     private LiquidityPool liquidityPool
     private SQSEvent sqsEvent
+    private SwapEstimate swapEstimate
     private SwapClaim swapClaim
     private SwapRequest swapRequest
     private String swapClaimAsString
@@ -35,15 +40,9 @@ class SwapListenerHandlerSpec extends Specification {
     def setup() {
         swapRequestListenerHandler = new SwapListenerHandler()
         swapRequestListenerHandler.setDynamoDBClient(dynamoDBClient)
+        swapRequestListenerHandler.setMarketMakerLogic(marketMakerLogic)
 
         liquidityPool = new LiquidityPool()
-        AssetAmount assetAmount = new AssetAmount()
-        assetAmount.setAmount(someValidSupply)
-        assetAmount.setPrice(someValidPrice)
-        liquidityPool.setLiquidityPoolName(someValidLiquidityPoolName)
-        liquidityPool.setAssetOne(assetAmount)
-        liquidityPool.setAssetTwo(assetAmount)
-
         swapRequest = new SwapRequest()
         swapRequest.setAssetNameIn(someValidAssetOne)
         swapRequest.setAssetNameOut(someValidAssetTwo)
@@ -69,7 +68,13 @@ class SwapListenerHandlerSpec extends Specification {
         1 * dynamoDBClient.loadLiquidityPool(someValidLiquidityPoolName) >> {
             return liquidityPool
         }
-        1 * dynamoDBClient.writeTransaction(_, _) >> { Transaction transaction, LiquidityPool newLiquidityPool ->
+        1 * marketMakerLogic.createSwapEstimate(liquidityPool, swapRequest) >> {
+            return swapEstimate
+        }
+        1 * marketMakerLogic.applySwapToPool(swapEstimate, liquidityPool) >> {
+            return liquidityPool
+        }
+        1 * dynamoDBClient.writeTransactionAndUpdateLiquidityPool(_, liquidityPool) >> { Transaction transaction, LiquidityPool newLiquidityPool ->
             assert transaction.getTransactionId() == someValidSwapContractId
             assert transaction.getTimeCompleted() != null
             assert transaction.getTransactionState() == TransactionStatus.FINISHED.name()

@@ -99,8 +99,9 @@ public class DynamoDBClient {
         }
     }
 
-    public void writeTransaction(final Transaction transaction,
-                                 final LiquidityPool newLiquidityPool) {
+    public void writeTransactionAndUpdateLiquidityPool(final Transaction transaction,
+                                                       final LiquidityPool newLiquidityPool) {
+        // when a transaction is updated, some initial parameters may not be included on update (ex - create timestamp)
         dynamoDBMapper.save(transaction, SKIP_NULL_ATTRS_WRITE_CONFIG);
         dynamoDBMapper.save(newLiquidityPool);
     }

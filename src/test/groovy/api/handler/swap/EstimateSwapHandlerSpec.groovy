@@ -7,7 +7,7 @@ import com.client.dynamodb.DynamoDBClient
 import com.client.kms.KMSClient
 import com.config.ErrorMessages
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.model.AssetAmount
+import com.logic.MarketMakerLogic
 import com.model.LiquidityPool
 import com.model.SwapEstimate
 import com.model.SwapRequest
@@ -19,41 +19,38 @@ import util.TestUtil
 
 class EstimateSwapHandlerSpec extends Specification {
 
-    private static Double someValidSupply = 50000
-    private static Double someValidPrice = 100
     private static Double someValidAmountToSwap = 5000
     private static String someValidAssetOne = "Apples"
     private static String someValidAssetTwo = "Bananas"
-    private static String someValidEncryptedClaim = "someValidEncryptedClaim"
     private static String someValidLiquidityPoolName = "Apples-Bananas"
+    private static String someSwapClaimToken = "someSwapClaimToken"
     private static String someAwsRequestId = "someAwsRequestId"
 
     def context = Mock(Context)
     def dynamoDBClient = Mock(DynamoDBClient)
     def kmsClient = Mock(KMSClient)
+    def marketMakerLogic = Mock(MarketMakerLogic)
 
-    def objectMapper = new ObjectMapper()
+    private ObjectMapper objectMapper = new ObjectMapper()
 
     @Subject
     EstimateSwapHandler EstimateSwapHandler
 
     APIGatewayProxyRequestEvent requestEvent
-    SwapRequest request;
+    SwapRequest request
     LiquidityPool liquidityPool
+    SwapEstimate swapEstimate
 
     def setup() {
         estimateSwapHandler = new EstimateSwapHandler()
         estimateSwapHandler.setDynamoDBClient(dynamoDBClient)
         estimateSwapHandler.setKmsClient(kmsClient)
+        estimateSwapHandler.setMarketMakerLogic(marketMakerLogic)
 
         liquidityPool = new LiquidityPool()
         liquidityPool.setLiquidityPoolName(someValidLiquidityPoolName)
-        AssetAmount someValidAssetAmount = new AssetAmount()
-        someValidAssetAmount.setAmount(someValidSupply)
-        someValidAssetAmount.setPrice(someValidPrice)
-        liquidityPool.setAssetOne(someValidAssetAmount)
-        liquidityPool.setAssetTwo(someValidAssetAmount)
 
+        swapEstimate = new SwapEstimate()
         context.getAwsRequestId() >> someAwsRequestId
     }
 
@@ -74,14 +71,16 @@ class EstimateSwapHandlerSpec extends Specification {
             return liquidityPool
         }
         1 * kmsClient.encrypt(_) >> {
-            return someValidEncryptedClaim
+            return someSwapClaimToken
+        }
+        1 * marketMakerLogic.createSwapEstimate(liquidityPool, _) >> {
+            return swapEstimate
         }
         assert response.getStatusCode() == 200
         final EstimateSwapHandler.EstimateSwapResponse estimateSwapResponse
                 = objectMapper.readValue(response.getBody(), EstimateSwapHandler.EstimateSwapResponse.class)
-        final SwapEstimate swapEstimate = estimateSwapResponse.getSwapEstimate()
-        validateSwapEstimate(swapEstimate)
-        assert estimateSwapResponse.getSwapClaimToken() == someValidEncryptedClaim
+        assert estimateSwapResponse.getSwapEstimate() == swapEstimate
+        assert estimateSwapResponse.getSwapClaimToken() == someSwapClaimToken
 
         where:
         type            | inAsset           | outAsset

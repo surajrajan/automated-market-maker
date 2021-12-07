@@ -70,7 +70,7 @@ functions:
           method: post
 
   # Listens to and processes wap contracts from the SQS queue
-  swapContractListener:
+  swapListener:
     handler: com.api.handler.listener.SwapListenerHandler
     events:
       - sqs:

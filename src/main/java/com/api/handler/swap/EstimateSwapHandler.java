@@ -30,6 +30,7 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
 
     private DynamoDBClient dynamoDBClient;
     private KMSClient kmsClient;
+    private MarketMakerLogic marketMakerLogic;
 
     private static final Integer SWAP_ESTIMATE_EXPIRES_AFTER_IN_SECONDS = 90;
 
@@ -54,7 +55,7 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         }
 
         // create an estimate based on the swap request
-        SwapEstimate swapEstimate = MarketMakerLogic.createSwapEstimate(liquidityPool, swapRequest);
+        SwapEstimate swapEstimate = marketMakerLogic.createSwapEstimate(liquidityPool, swapRequest);
 
         // create a swap claim to "claim" / "execute" this swap later
         SwapClaim swapClaim = new SwapClaim();
