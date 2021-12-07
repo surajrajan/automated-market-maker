@@ -1,7 +1,7 @@
 package com.logic;
 
-import com.api.handler.swap.EstimateSwapHandler;
 import com.model.AssetAmount;
+import com.model.EstimateSwapRequest;
 import com.model.LiquidityPool;
 import com.model.SwapContract;
 import com.util.LiquidityPoolUtil;
@@ -56,7 +56,7 @@ public class MarketMakerLogic {
     }
 
     public static SwapContract createSwapContract(final LiquidityPool liquidityPool,
-                                                  final EstimateSwapHandler.EstimateSwapRequest request) {
+                                                  final EstimateSwapRequest request) {
         // create map to access assetName to assetInfo
         Map<String, AssetAmount> assetAmountList = LiquidityPoolUtil.getAssetNameAssetAmountMap(liquidityPool);
 

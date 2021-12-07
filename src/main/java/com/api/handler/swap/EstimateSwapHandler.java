@@ -8,6 +8,7 @@ import com.client.dynamodb.DynamoDBClient;
 import com.client.kms.KMSClient;
 import com.config.ErrorMessages;
 import com.logic.MarketMakerLogic;
+import com.model.EstimateSwapRequest;
 import com.model.LiquidityPool;
 import com.model.SwapContract;
 import com.model.exception.InvalidInputException;
@@ -83,16 +84,6 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         if (request.getAssetAmountIn() < 0) {
             throw new InvalidInputException(ErrorMessages.NEGATIVE_AMOUNT_TO_SWAP);
         }
-    }
-
-    /**
-     * Input request.
-     */
-    @Data
-    public static class EstimateSwapRequest {
-        private String assetNameIn;
-        private Double assetAmountIn;
-        private String assetNameOut;
     }
 
     @Data

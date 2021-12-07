@@ -1,8 +1,8 @@
 package com.util;
 
-import com.api.handler.swap.EstimateSwapHandler;
 import com.config.ErrorMessages;
 import com.model.AssetAmount;
+import com.model.EstimateSwapRequest;
 import com.model.LiquidityPool;
 import com.model.exception.InvalidInputException;
 import com.model.types.Asset;
@@ -72,7 +72,7 @@ public final class LiquidityPoolUtil {
         return liquidityPoolName;
     }
 
-    public static String inferLiquidityPoolFromSwapRequest(final EstimateSwapHandler.EstimateSwapRequest estimateSwapRequest) {
+    public static String inferLiquidityPoolFromSwapRequest(final EstimateSwapRequest estimateSwapRequest) {
         String assetIn = estimateSwapRequest.getAssetNameIn();
         String assetOut = estimateSwapRequest.getAssetNameOut();
         int compare = assetIn.compareTo(assetOut);

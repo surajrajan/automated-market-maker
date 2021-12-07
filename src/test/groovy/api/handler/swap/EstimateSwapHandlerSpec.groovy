@@ -8,6 +8,7 @@ import com.client.kms.KMSClient
 import com.config.ErrorMessages
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.model.AssetAmount
+import com.model.EstimateSwapRequest
 import com.model.LiquidityPool
 import com.model.SwapContract
 import com.serverless.ApiGatewayResponse
@@ -37,7 +38,7 @@ class EstimateSwapHandlerSpec extends Specification {
             EstimateSwapHandler
 
     APIGatewayProxyRequestEvent requestEvent
-    EstimateSwapHandler.EstimateSwapRequest request;
+    EstimateSwapRequest request;
     LiquidityPool liquidityPool
 
     def setup() {
@@ -59,7 +60,7 @@ class EstimateSwapHandlerSpec extends Specification {
     @Unroll
     def "given valid request (#type) should return valid swap contract"() {
         given:
-        request = new EstimateSwapHandler.EstimateSwapRequest()
+        request = new EstimateSwapRequest()
         request.setAssetNameIn(inAsset)
         request.setAssetNameOut(outAsset)
         request.setAssetAmountIn(someValidAmountToSwap)
@@ -96,7 +97,7 @@ class EstimateSwapHandlerSpec extends Specification {
 
     def "given invalid request (#type) should throw bad request"() {
         given:
-        request = new EstimateSwapHandler.EstimateSwapRequest()
+        request = new EstimateSwapRequest()
         request.setAssetNameIn(inAsset)
         request.setAssetNameOut(outAsset)
         request.setAssetAmountIn(amountToSwap)
