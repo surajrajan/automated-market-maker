@@ -10,7 +10,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Set of all unique pairs.
+ * Data about a liquidity pool between two assets. Contains the name in alphabetical order (ex - Apples-Bananas) and the
+ * AssetAmount of each asset.
  */
 @Builder
 @NoArgsConstructor

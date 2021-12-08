@@ -3,10 +3,19 @@ package com.model.types;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Possible values for asset.
+ */
 public enum Asset {
     APPLES("Apples"),
     BANANAS("Bananas"),
+    ORANGES("Oranges"),
+    PEARS("Pears"),
+    LEMONS("Lemons"),
+    LIMES("Limes"),
     TOMATOES("Tomatoes"),
+    ONIONS("Onions"),
+    CARROTS("Carrots"),
     POTATOES("Potatoes");
 
     String name;

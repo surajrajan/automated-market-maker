@@ -12,16 +12,17 @@ the credit for the above thumbnail).
 
 ## Project Overview
 This project is an AWS [serverless](https://www.serverless.com/framework/docs) project, which, when deployed, provides
-a set APIs (each backed by a Lambda function), interacting with DynamoDB, SQS, and KMS that can help simulate an AMM:
+a set APIs (each backed by a Lambda function), that interact with DynamoDB, SQS, and KMS and simulate an AMM. All model
+definitions are documented in ```com.model```. 
 
-* **Create Liquidity Pool:** Creates ```LiquidityPool``` between any two assets. Allowed asset names are in `com.model.types.Asset`.
-    Initial prices / supply of both assets must be set such that the **market cap** of each is equal. Stored in the
-    DynamoDB LiquidityPools table. 
-* **Get Liquidity Pool:** Returns the details of a liquidity pool, along with price / supply details both assets.
-* **Estimate Swap:** Estimates the details of performing an ```SwapRequest```. Requires a liquidity pool to exist for 
-    the assets being swapped. Response is a ```SwapEstimate```, which details the amount / price of the asset received
-    back. Also returns a ```swapClaimToken```, which is a **one-time use token** to redeem / submit this transaction. It
-    is not guaranteed that the actual price will be exactly the same as the estimate, but it will be processed.
+* **Create Liquidity Pool:** Creates a ```LiquidityPool``` for two ```AssetAmounts```, signifying the two assets, and
+    their price / supplies. Allowed asset names are in `com.model.types.Asset`. When created, the initial prices /
+    supply of both assets must be set such that the **market cap** of each is equal. Stored in DynamoDB.
+* **Get Liquidity Pool:** Returns a ```LiquidityPool``` by name from DynamoDB.
+* **Estimate Swap:** Estimates the details of performing a ```SwapRequest```. Requires a corresponding ```LiquidityPool```
+    to exist to provide liquidity for the assets being swapped. Response includes 1) a ```SwapEstimate```, detailing the 
+    current exact ```AssetAmount``` details being swapped in / out, and 2) a ```swapClaimToken```, a **one-time use token**
+    that can be used to redeem / submit this particular transaction. The t will be processed.
 * **Submit Swap:** Given a ```swapClaimToken```, will queue the underlying ```SwapRequest``` request into an SQS queue,
     which will then be processed in real time. As the swap claim is processed, a new ```SwapEstimate``` is constructed.
     This swap is then **executed** by updating the LiquidityPool. The ```Transaction``` is also recorded in the DynamoDB

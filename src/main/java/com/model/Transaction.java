@@ -10,6 +10,11 @@ import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
+/**
+ * Entity to capture a transaction / swap being made. Initialized based on a unique SwapEstimate swapContractId (requestId)
+ * and contains the swap estimate details that were performed. Also contains the status, which is maintained when
+ * a swap is submitted and then finally completed / processed.
+ */
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
