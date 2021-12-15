@@ -2,6 +2,7 @@ package api.handler.swap
 
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.api.handler.swap.SubmitSwapHandler
 import com.api.handler.swap.model.SubmitSwapRequest
 import com.client.dynamodb.DynamoDBClient
@@ -13,7 +14,6 @@ import com.model.SwapRequest
 import com.model.Transaction
 import com.model.exception.InvalidInputException
 import com.model.types.TransactionStatus
-import com.serverless.ApiGatewayResponse
 import com.util.ObjectMapperUtil
 import org.joda.time.DateTime
 import spock.lang.Specification
@@ -62,7 +62,7 @@ class SubmitSwapHandlerSpec extends Specification {
 
     def "given valid claim should start transaction and submit swap to sqs"() {
         when:
-        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = submitSwapRequestHandler.handleRequest(requestEvent, context)
 
         then:
         1 * kmsClient.decrypt(someValidSwapClaimToken) >> {
@@ -93,7 +93,7 @@ class SubmitSwapHandlerSpec extends Specification {
         swapClaimToken.setExpiresAt(new DateTime().minusHours(1).toDate())
 
         when:
-        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = submitSwapRequestHandler.handleRequest(requestEvent, context)
 
         then:
         1 * kmsClient.decrypt(someValidSwapClaimToken) >> {
@@ -105,7 +105,7 @@ class SubmitSwapHandlerSpec extends Specification {
 
     def "given kms client throws invalid input exception should throw bad request invalid claim"() {
         when:
-        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = submitSwapRequestHandler.handleRequest(requestEvent, context)
 
         then:
         1 * kmsClient.decrypt(someValidSwapClaimToken) >> {
@@ -117,7 +117,7 @@ class SubmitSwapHandlerSpec extends Specification {
 
     def "given dynamo invalid input exception should throw bad request claim already used"() {
         when:
-        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = submitSwapRequestHandler.handleRequest(requestEvent, context)
 
         then:
         1 * kmsClient.decrypt(someValidSwapClaimToken) >> {
@@ -132,7 +132,7 @@ class SubmitSwapHandlerSpec extends Specification {
 
     def "given empty claim token should throw bad request missing fields"() {
         when:
-        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(invalidRequest, context)
+        APIGatewayProxyResponseEvent response = submitSwapRequestHandler.handleRequest(invalidRequest, context)
 
         then:
         assert response.getStatusCode() == 400

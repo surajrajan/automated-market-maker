@@ -2,13 +2,13 @@ package api.handler.pool
 
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.api.handler.pool.GetLiquidityPoolHandler
 import com.client.dynamodb.DynamoDBClient
 import com.config.ErrorMessages
 import com.model.LiquidityPool
 import com.model.PriceAmount
 import com.model.exception.InvalidInputException
-import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
 import spock.lang.Subject
 import util.TestUtil
@@ -37,7 +37,7 @@ class GetLiquidityHandlerPoolSpec extends Specification {
 
     def "given key exists should return liquidity pool"() {
         when:
-        ApiGatewayResponse response = getLiquidityPoolHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = getLiquidityPoolHandler.handleRequest(requestEvent, context)
 
         then:
         1 * dynamoDBClient.loadLiquidityPool(someValidLiquidityPoolName) >> {
@@ -50,7 +50,7 @@ class GetLiquidityHandlerPoolSpec extends Specification {
     def "given unable to extract poolName from path param"() {
         when:
         requestEvent.setPathParameters(new HashMap<String, String>())
-        ApiGatewayResponse response = getLiquidityPoolHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = getLiquidityPoolHandler.handleRequest(requestEvent, context)
 
         then:
         assert response.getStatusCode() == 400
@@ -59,7 +59,7 @@ class GetLiquidityHandlerPoolSpec extends Specification {
 
     def "given db client throws invalid input exception should throw bad request"() {
         when:
-        ApiGatewayResponse response = getLiquidityPoolHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = getLiquidityPoolHandler.handleRequest(requestEvent, context)
 
         then:
         1 * dynamoDBClient.loadLiquidityPool(someValidLiquidityPoolName) >> {

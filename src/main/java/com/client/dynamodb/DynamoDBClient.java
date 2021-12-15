@@ -99,6 +99,12 @@ public class DynamoDBClient {
         }
     }
 
+    /**
+     * Saves both the Transaction and LiquidityPool objects. Skips overwriting null attributes.
+     *
+     * @param transaction
+     * @param newLiquidityPool
+     */
     public void writeTransactionAndUpdateLiquidityPool(final Transaction transaction,
                                                        final LiquidityPool newLiquidityPool) {
         // use skip null attrs setting to prevent overwriting of fields that are left blank

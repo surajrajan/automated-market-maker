@@ -3,14 +3,15 @@ package com.api.handler.pool;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.config.ServiceConstants;
 import com.model.LiquidityPool;
 import com.model.exception.InvalidInputException;
-import com.serverless.ApiGatewayResponse;
 import com.util.LiquidityPoolUtil;
 import com.util.RequestUtil;
+import com.util.ResponseUtil;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Setter
-public class GetLiquidityPoolHandler implements RequestHandler<APIGatewayProxyRequestEvent, ApiGatewayResponse> {
+public class GetLiquidityPoolHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private DynamoDBClient dynamoDBClient;
 
@@ -30,16 +31,16 @@ public class GetLiquidityPoolHandler implements RequestHandler<APIGatewayProxyRe
     }
 
     @Override
-    public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
         log.info("Received request event: {}", requestEvent);
         try {
             final String poolName = RequestUtil.extractPoolNameFromPathParams(requestEvent.getPathParameters(),
                     ServiceConstants.LIQUIDITY_POOL_PATH_PARAMETER_NAME);
             LiquidityPoolUtil.validateLiquidityPoolName(poolName);
             final LiquidityPool liquidityPool = dynamoDBClient.loadLiquidityPool(poolName);
-            return ApiGatewayResponse.createSuccessResponse(liquidityPool, context);
+            return ResponseUtil.createSuccessResponse(liquidityPool, context);
         } catch (InvalidInputException e) {
-            return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
+            return ResponseUtil.createBadRequest(e.getMessage(), context);
         }
     }
 }

@@ -3,6 +3,7 @@ package com.api.handler.swap;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.api.handler.swap.model.SubmitSwapRequest;
 import com.api.handler.swap.model.SubmitSwapResponse;
 import com.client.DaggerAppDependencies;
@@ -14,8 +15,8 @@ import com.config.ErrorMessages;
 import com.model.Transaction;
 import com.model.exception.InvalidInputException;
 import com.model.types.TransactionStatus;
-import com.serverless.ApiGatewayResponse;
 import com.util.ObjectMapperUtil;
+import com.util.ResponseUtil;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,7 @@ import java.util.Date;
 
 @Slf4j
 @Setter
-public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestEvent, ApiGatewayResponse> {
+public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private SQSClient sqsClient;
     private KMSClient kmsClient;
@@ -37,7 +38,7 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
     }
 
     @Override
-    public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
         // get swap claim object from encrypted swap claim input
         log.info("Received request event: {}", requestEvent);
         final SubmitSwapRequest submitSwapRequest;
@@ -49,14 +50,14 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
             log.info("swapClaimToken: {}", swapClaimToken);
         } catch (InvalidInputException e) {
             log.error(e.getMessage(), e);
-            return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
+            return ResponseUtil.createBadRequest(e.getMessage(), context);
         }
 
         // validate expiry
         Date now = new Date();
         if (now.after(swapClaimToken.getExpiresAt())) {
             log.error("Swap is expired. Current time: {}", now);
-            return ApiGatewayResponse.createBadRequest(ErrorMessages.CLAIM_EXPIRED, context);
+            return ResponseUtil.createBadRequest(ErrorMessages.CLAIM_EXPIRED, context);
         }
 
         // set transactionId as unique estimate swapContractId
@@ -69,7 +70,7 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
             // write to DB that transaction has started
             dynamoDBClient.initializeTransaction(transaction);
         } catch (InvalidInputException e) {
-            return ApiGatewayResponse.createBadRequest(ErrorMessages.CLAIM_ALREADY_USED, context);
+            return ResponseUtil.createBadRequest(ErrorMessages.CLAIM_ALREADY_USED, context);
         }
 
         // submit swap claim token to be processed by SQS
@@ -80,7 +81,7 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
         // return success response
         SubmitSwapResponse response = new SubmitSwapResponse();
         response.setTransactionId(transactionId);
-        return ApiGatewayResponse.createSuccessResponse(response, context);
+        return ResponseUtil.createSuccessResponse(response, context);
     }
 
     private void validateRequest(@NonNull final SubmitSwapRequest request) throws InvalidInputException {

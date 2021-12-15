@@ -3,6 +3,7 @@ package com.api.handler.swap;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.api.handler.swap.model.EstimateSwapResponse;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
@@ -16,9 +17,9 @@ import com.model.SwapEstimate;
 import com.model.SwapRequest;
 import com.model.exception.InvalidInputException;
 import com.model.types.Asset;
-import com.serverless.ApiGatewayResponse;
 import com.util.LiquidityPoolUtil;
 import com.util.ObjectMapperUtil;
+import com.util.ResponseUtil;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
@@ -27,7 +28,7 @@ import java.util.Date;
 
 @Slf4j
 @Setter
-public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyRequestEvent, ApiGatewayResponse> {
+public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private DynamoDBClient dynamoDBClient;
     private KMSClient kmsClient;
@@ -40,7 +41,7 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
     }
 
     @Override
-    public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
         // validate request and load liquidity pool from swap request
         log.info("Received request event: {}", requestEvent);
         final LiquidityPool liquidityPool;
@@ -51,7 +52,7 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
             String poolName = LiquidityPoolUtil.inferPoolNameFromSwapRequest(swapRequest);
             liquidityPool = dynamoDBClient.loadLiquidityPool(poolName);
         } catch (InvalidInputException e) {
-            return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
+            return ResponseUtil.createBadRequest(e.getMessage(), context);
         }
 
         // create an estimate based on the swap request
@@ -77,7 +78,7 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         EstimateSwapResponse estimateSwapResponse = new EstimateSwapResponse();
         estimateSwapResponse.setSwapEstimate(swapEstimate);
         estimateSwapResponse.setSwapClaimToken(encryptedSwapClaimToken);
-        return ApiGatewayResponse.createSuccessResponse(estimateSwapResponse, context);
+        return ResponseUtil.createSuccessResponse(estimateSwapResponse, context);
     }
 
     private void validateRequest(final SwapRequest request) throws InvalidInputException {

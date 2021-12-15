@@ -2,6 +2,7 @@ package api.handler.pool
 
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.api.handler.pool.CreateLiquidityPoolHandler
 import com.api.handler.pool.model.CreateLiquidityPoolRequest
 import com.client.dynamodb.DynamoDBClient
@@ -9,7 +10,6 @@ import com.config.ErrorMessages
 import com.model.LiquidityPool
 import com.model.PriceAmount
 import com.model.exception.InvalidInputException
-import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
 import spock.lang.Subject
 import spock.lang.Unroll
@@ -43,7 +43,7 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
 
     def "given valid inputs should call dynamoDB to save"() {
         when:
-        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = createLiquidityPoolHandler.handleRequest(requestEvent, context)
 
         then:
         1 * dynamoDBClient.createLiquidityPool(_) >> { LiquidityPool liquidityPool ->
@@ -64,7 +64,7 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         APIGatewayProxyRequestEvent requestEvent = TestUtil.createEventRequest(request, liquidityPoolName)
 
         when:
-        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = createLiquidityPoolHandler.handleRequest(requestEvent, context)
 
         then:
         assert response.getStatusCode() == 400
@@ -83,7 +83,7 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
 
     def "given db client throws invalid input exception, should throw bad request exception"() {
         when:
-        ApiGatewayResponse response = createLiquidityPoolHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = createLiquidityPoolHandler.handleRequest(requestEvent, context)
 
         then:
         dynamoDBClient.createLiquidityPool(_) >> {

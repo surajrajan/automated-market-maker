@@ -3,6 +3,7 @@ package com.api.handler.pool;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.api.handler.pool.model.CreateLiquidityPoolRequest;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
@@ -11,10 +12,10 @@ import com.config.ServiceConstants;
 import com.model.LiquidityPool;
 import com.model.PriceAmount;
 import com.model.exception.InvalidInputException;
-import com.serverless.ApiGatewayResponse;
 import com.util.LiquidityPoolUtil;
 import com.util.ObjectMapperUtil;
 import com.util.RequestUtil;
+import com.util.ResponseUtil;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,7 @@ import java.util.List;
  */
 @Slf4j
 @Setter
-public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProxyRequestEvent, ApiGatewayResponse> {
+public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private DynamoDBClient dynamoDBClient;
 
@@ -39,7 +40,7 @@ public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProx
     }
 
     @Override
-    public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
         log.info("Received request event: {}", requestEvent);
         final String poolName;
         // extract request / validations
@@ -52,7 +53,7 @@ public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProx
             priceAmountList = Arrays.asList(request.getAssetOne(), request.getAssetTwo());
             validatePriceAmounts(priceAmountList);
         } catch (InvalidInputException e) {
-            return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
+            return ResponseUtil.createBadRequest(e.getMessage(), context);
         }
 
         // create LiquidityPool object to save in DB
@@ -79,11 +80,11 @@ public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProx
             dynamoDBClient.createLiquidityPool(liquidityPool);
         } catch (InvalidInputException e) {
             // liquidity pool already exists
-            return ApiGatewayResponse.createBadRequest(ErrorMessages.LIQUIDITY_POOL_ALREADY_EXISTS, context);
+            return ResponseUtil.createBadRequest(ErrorMessages.LIQUIDITY_POOL_ALREADY_EXISTS, context);
         }
 
         // return success / created / 201
-        return ApiGatewayResponse.createEmptyResponse(201, context);
+        return ResponseUtil.createEmptyResponse(201, context);
     }
 
 

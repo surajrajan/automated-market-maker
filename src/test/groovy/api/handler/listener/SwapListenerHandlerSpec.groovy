@@ -15,6 +15,7 @@ import com.model.types.TransactionStatus
 import org.joda.time.DateTime
 import spock.lang.Specification
 import spock.lang.Subject
+import spock.lang.Unroll
 
 class SwapListenerHandlerSpec extends Specification {
 
@@ -28,7 +29,6 @@ class SwapListenerHandlerSpec extends Specification {
     private String someValidLiquidityPoolName = "Apples-Bananas"
     private String someValidSwapContractId = "someValidSwapContractId"
     private LiquidityPool liquidityPool
-    private SQSEvent sqsEvent
     private SwapEstimate swapEstimate
     private SwapClaimToken swapClaim
     private SwapRequest swapRequest
@@ -42,26 +42,18 @@ class SwapListenerHandlerSpec extends Specification {
         swapRequestListenerHandler = new SwapListenerHandler()
         swapRequestListenerHandler.setDynamoDBClient(dynamoDBClient)
         swapRequestListenerHandler.setMarketMakerLogic(marketMakerLogic)
-
         liquidityPool = new LiquidityPool()
         swapRequest = new SwapRequest()
-        swapRequest.setInName(someValidAssetOne)
-        swapRequest.setOutName(someValidAssetTwo)
-        swapRequest.setInAmount(someValidAmountToSwap)
-
-        swapClaim = new SwapClaimToken()
-        swapClaim.setSwapContractId(someValidSwapContractId)
-        swapClaim.setSwapRequest(swapRequest)
-        swapClaim.setExpiresAt(new DateTime().plusHours(1).toDate())
-        swapClaimAsString = objectMapper.writeValueAsString(swapClaim)
-
-        sqsEvent = new SQSEvent()
-        SQSEvent.SQSMessage sqsMessage = new SQSEvent.SQSMessage()
-        sqsMessage.setBody(swapClaimAsString)
-        sqsEvent.setRecords(Arrays.asList(sqsMessage))
     }
 
-    def "given valid sqs event should write to db"() {
+    @Unroll
+    def "given valid sqs event (#type) should write to db"() {
+        given:
+        swapRequest.setInAmount(someValidAmountToSwap)
+        swapRequest.setInName(assetOne)
+        swapRequest.setOutName(assetTwo)
+        SQSEvent sqsEvent = buildSQSEvent(swapRequest)
+
         when:
         swapRequestListenerHandler.handleRequest(sqsEvent, context)
 
@@ -80,5 +72,38 @@ class SwapListenerHandlerSpec extends Specification {
             assert transaction.getTimeCompleted() != null
             assert transaction.getTransactionState() == TransactionStatus.FINISHED.name()
         }
+
+        where:
+        type            | assetOne          | assetTwo
+        "normal order"  | someValidAssetOne | someValidAssetTwo
+        "reverse order" | someValidAssetTwo | someValidAssetOne
+    }
+
+    def "given invalid message should ignore()"() {
+        given:
+        SQSEvent invalidEvent = new SQSEvent()
+
+        when:
+        swapRequestListenerHandler.handleRequest(invalidEvent, context)
+
+        then:
+        0 * dynamoDBClient.loadLiquidityPool(_)
+        0 * marketMakerLogic.createSwapEstimate(_, _)
+        0 * marketMakerLogic.applySwapEstimateToPool(_, _)
+        0 * dynamoDBClient.writeTransactionAndUpdateLiquidityPool(_, _)
+    }
+
+    private SQSEvent buildSQSEvent(final SwapRequest swapRequest) {
+        swapClaim = new SwapClaimToken()
+        swapClaim.setSwapContractId(someValidSwapContractId)
+        swapClaim.setSwapRequest(swapRequest)
+        swapClaim.setExpiresAt(new DateTime().plusHours(1).toDate())
+        swapClaimAsString = objectMapper.writeValueAsString(swapClaim)
+
+        SQSEvent sqsEvent = new SQSEvent()
+        SQSEvent.SQSMessage sqsMessage = new SQSEvent.SQSMessage()
+        sqsMessage.setBody(swapClaimAsString)
+        sqsEvent.setRecords(Arrays.asList(sqsMessage))
+        return sqsEvent;
     }
 }

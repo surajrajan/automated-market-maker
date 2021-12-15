@@ -11,7 +11,6 @@ import com.model.LiquidityPool;
 import com.model.SwapEstimate;
 import com.model.SwapRequest;
 import com.model.Transaction;
-import com.model.exception.InvalidInputException;
 import com.model.types.TransactionStatus;
 import com.util.LiquidityPoolUtil;
 import com.util.ObjectMapperUtil;
@@ -49,8 +48,8 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
             final String poolName = LiquidityPoolUtil
                     .getPoolName(swapRequest.getInName(), swapRequest.getOutName());
             liquidityPool = dynamoDBClient.loadLiquidityPool(poolName);
-        } catch (InvalidInputException e) {
-            log.error("Message is invalid format. Failed. Deleting.", e);
+        } catch (Exception e) {
+            log.error("Message is invalid format. Ignoring message and processing / deleting.", e);
             return null;
         }
 

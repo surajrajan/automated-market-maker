@@ -2,6 +2,7 @@ package api.handler.swap
 
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.api.handler.swap.EstimateSwapHandler
 import com.api.handler.swap.model.EstimateSwapResponse
 import com.client.dynamodb.DynamoDBClient
@@ -13,7 +14,6 @@ import com.logic.MarketMakerLogic
 import com.model.LiquidityPool
 import com.model.SwapEstimate
 import com.model.SwapRequest
-import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
 import spock.lang.Subject
 import spock.lang.Unroll
@@ -66,7 +66,7 @@ class EstimateSwapHandlerSpec extends Specification {
         requestEvent = TestUtil.createEventRequest(request, someValidLiquidityPoolName)
 
         when:
-        ApiGatewayResponse response = estimateSwapHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = estimateSwapHandler.handleRequest(requestEvent, context)
 
         then:
         1 * dynamoDBClient.loadLiquidityPool(someValidLiquidityPoolName) >> {
@@ -103,7 +103,7 @@ class EstimateSwapHandlerSpec extends Specification {
         requestEvent = TestUtil.createEventRequest(request, someValidLiquidityPoolName)
 
         when:
-        ApiGatewayResponse response = estimateSwapHandler.handleRequest(requestEvent, context)
+        APIGatewayProxyResponseEvent response = estimateSwapHandler.handleRequest(requestEvent, context)
 
         then:
         assert response.getStatusCode() == 400
