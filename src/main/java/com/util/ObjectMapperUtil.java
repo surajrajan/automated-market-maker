@@ -23,12 +23,15 @@ public final class ObjectMapperUtil {
         }
     }
 
-    public static String toString(final Object input) throws InvalidInputException {
+    /**
+     * Attempts to serialize a given object. Should succeed, but if not, throws a runtime exception which is bubbled up.
+     */
+    public static String toString(final Object input) {
         try {
             return objectMapper.writeValueAsString(input);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize,", e);
-            throw new InvalidInputException(e);
+            throw new RuntimeException(e);
         }
     }
 }

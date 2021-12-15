@@ -14,6 +14,7 @@ import com.model.Transaction
 import com.model.exception.InvalidInputException
 import com.model.types.TransactionStatus
 import com.serverless.ApiGatewayResponse
+import com.util.ObjectMapperUtil
 import org.joda.time.DateTime
 import spock.lang.Specification
 import spock.lang.Subject
@@ -30,6 +31,7 @@ class SubmitSwapHandlerSpec extends Specification {
     private final String someSwapContractId = "someSwapContractId"
 
     private APIGatewayProxyRequestEvent requestEvent
+    private APIGatewayProxyRequestEvent invalidRequest
     private SubmitSwapRequest submitSwapRequest
     private SwapClaimToken swapClaimToken
     private SwapRequest swapRequest
@@ -52,6 +54,9 @@ class SubmitSwapHandlerSpec extends Specification {
         swapClaimToken.setSwapContractId(someSwapContractId)
         swapClaimToken.setSwapRequest(swapRequest)
         swapClaimToken.setExpiresAt(new DateTime().plusHours(1).toDate())
+
+        SubmitSwapRequest emptySwapRequest = new SubmitSwapRequest()
+        invalidRequest = TestUtil.createEventRequest(emptySwapRequest)
     }
 
 
@@ -70,8 +75,11 @@ class SubmitSwapHandlerSpec extends Specification {
             assert transaction.getTimeStarted() != null
             assert transaction.getTimeCompleted() == null
         }
-        1 * sqsClient.submitSwap(_) >> { SwapClaimToken swapClaim ->
-            assert swapClaim.getSwapContractId() == someSwapContractId
+        1 * sqsClient.submitMessage(_) >> { String swapClaimAsString ->
+            SwapClaimToken swapClaimToken = ObjectMapperUtil.toClass(swapClaimAsString, SwapClaimToken.class)
+            assert swapClaimToken.getSwapRequest() == swapRequest
+            assert swapClaimToken.getExpiresAt() != null
+            assert swapClaimToken.getSwapContractId() == someSwapContractId
         }
         assert response.getBody().contains(someSwapContractId)
         assert response.getStatusCode() == 200
@@ -95,15 +103,39 @@ class SubmitSwapHandlerSpec extends Specification {
         assert response.getStatusCode() == 400
     }
 
-    def "given kms client throws invalid input exception should throw bad request"() {
+    def "given kms client throws invalid input exception should throw bad request invalid claim"() {
         when:
         ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
 
         then:
         1 * kmsClient.decrypt(someValidSwapClaimToken) >> {
-            throw new InvalidInputException();
+            throw new InvalidInputException(ErrorMessages.INVALID_CLAIM);
         }
         assert response.getStatusCode() == 400
         assert response.getBody().contains(ErrorMessages.INVALID_CLAIM)
+    }
+
+    def "given dynamo invalid input exception should throw bad request claim already used"() {
+        when:
+        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(requestEvent, context)
+
+        then:
+        1 * kmsClient.decrypt(someValidSwapClaimToken) >> {
+            return swapClaimToken
+        }
+        1 * dynamoDBClient.initializeTransaction(_) >> {
+            throw new InvalidInputException()
+        }
+        assert response.getStatusCode() == 400
+        assert response.getBody().contains(ErrorMessages.CLAIM_ALREADY_USED)
+    }
+
+    def "given empty claim token should throw bad request missing fields"() {
+        when:
+        ApiGatewayResponse response = submitSwapRequestHandler.handleRequest(invalidRequest, context)
+
+        then:
+        assert response.getStatusCode() == 400
+        assert response.getBody().contains(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS)
     }
 }

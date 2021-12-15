@@ -16,6 +16,7 @@ import com.model.exception.InvalidInputException;
 import com.model.types.TransactionStatus;
 import com.serverless.ApiGatewayResponse;
 import com.util.ObjectMapperUtil;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +49,7 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
             log.info("swapClaimToken: {}", swapClaimToken);
         } catch (InvalidInputException e) {
             log.error(e.getMessage(), e);
-            return ApiGatewayResponse.createBadRequest(ErrorMessages.INVALID_CLAIM, context);
+            return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
         }
 
         // validate expiry
@@ -71,8 +72,9 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
             return ApiGatewayResponse.createBadRequest(ErrorMessages.CLAIM_ALREADY_USED, context);
         }
 
-        // submit swap claim to be processed by SQS
-        sqsClient.submitSwap(swapClaimToken);
+        // submit swap claim token to be processed by SQS
+        final String swapClaimTokenAsString = ObjectMapperUtil.toString(swapClaimToken);
+        sqsClient.submitMessage(swapClaimTokenAsString);
         log.info("Submitted swap claim to SQS.");
 
         // return success response
@@ -81,9 +83,9 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
         return ApiGatewayResponse.createSuccessResponse(response, context);
     }
 
-    private void validateRequest(final SubmitSwapRequest request) {
-        if (request == null || request.getSwapClaimToken() == null) {
-            throw new IllegalArgumentException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
+    private void validateRequest(@NonNull final SubmitSwapRequest request) throws InvalidInputException {
+        if (request.getSwapClaimToken() == null) {
+            throw new InvalidInputException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
         }
     }
 }

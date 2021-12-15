@@ -15,6 +15,7 @@ import com.serverless.ApiGatewayResponse;
 import com.util.LiquidityPoolUtil;
 import com.util.ObjectMapperUtil;
 import com.util.RequestUtil;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,7 +42,7 @@ public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProx
     public ApiGatewayResponse handleRequest(APIGatewayProxyRequestEvent requestEvent, Context context) {
         log.info("Received request event: {}", requestEvent);
         final String poolName;
-        // validations
+        // extract request / validations
         List<PriceAmount> priceAmountList;
         try {
             poolName = RequestUtil.extractPoolNameFromPathParams(requestEvent.getPathParameters(),
@@ -93,7 +94,7 @@ public class CreateLiquidityPoolHandler implements RequestHandler<APIGatewayProx
      * @param priceAmountList
      * @throws InvalidInputException
      */
-    private void validatePriceAmounts(final List<PriceAmount> priceAmountList) throws InvalidInputException {
+    private void validatePriceAmounts(@NonNull final List<PriceAmount> priceAmountList) throws InvalidInputException {
         // ensure valid numbers
         for (final PriceAmount priceAmount : priceAmountList) {
             if (priceAmount.getPrice() < ServiceConstants.MIN_PRICE

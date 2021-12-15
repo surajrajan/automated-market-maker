@@ -2,9 +2,6 @@ package com.client.sqs;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.client.kms.token.SwapClaimToken;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,7 +14,6 @@ public class SQSClient {
 
     AmazonSQS amazonSQS;
     final private String queueUrl;
-    private static ObjectMapper objectMapper = new ObjectMapper();
 
     public SQSClient(final AmazonSQS amazonSQS) {
         this.amazonSQS = amazonSQS;
@@ -30,13 +26,8 @@ public class SQSClient {
      *
      * @param swapRequest
      */
-    public void submitSwap(final SwapClaimToken swapClaimToken) {
-        final String messageBody;
-        try {
-            messageBody = objectMapper.writeValueAsString(swapClaimToken);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize swapRequest", e);
-        }
+    public void submitMessage(final String messageBody) {
+        log.info("Submitting message to SQS: {}", messageBody);
         SendMessageRequest sendMessageRequest = new SendMessageRequest();
         sendMessageRequest.setQueueUrl(queueUrl);
         sendMessageRequest.setMessageBody(messageBody);

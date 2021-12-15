@@ -70,6 +70,7 @@ GET /pool/Apples-Bananas
 
 Response
 
+200 OK
 {
   "name": "Apples-Bananas",
   "assetOne": {
@@ -121,6 +122,7 @@ POST /swap/estimate
 
 Response
 
+200 OK
 {
    "swapClaimToken": "AgV4mhdSSNpB3KxejkfkSxU036JdfpMgzKiIcdOd4XAizBYAXwABABVhd3MtY3J5cHRvLXB1YmxpYy1rZXkAREF2WXNTLzhNejl6dVEwNnk1ZzQ1Wm1zblFTaHNyY0xXbzZQQW10YW0xQ1dnRTB6UTZyREZTeGVDU1Bjd0JGSk9mZz09AAEAB2F3cy1rbXMAS2Fybjphd3M6a21zOnVzLWVhc3QtMTo4NjEwNjA3MTQxMjU6a2V5L2JiZTJlNjNiLWRmYjQtNGI1NS1iNzdiLTEyZTc2NjZmN2I0YQC4AQIBAHhCZM0mN8+FmBmqT4/JZfwJsUzvBO6TKj/WSwbN4RsSUgEZyUN/tfqKuzf4MJOtvzrvAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMKoeof5JPXigu26AKAgEQgDuUrjP9ZCF+ijh5UWxUM/gR1f9WGpw4xZz7Xttx+jK3wT02/Eclai6pTc9zuqts+KixXB1NZvrgGxYWRAIAABAAvVh5CDrQ+pnqOUppN6WwR2PBmTLBl2x0ffS0HVnjGzHLI5C+DCU2F+fUnzaGCOy0/////wAAAAEAAAAAAAAAAAAAAAEAAACbiPfGEXGnzOTS5hTLumWa2x/oF3z7jk6dw8UDWAPvI1D7wcXFO++iIrpc9F6FVDVVOIy1mOUkKjUj6782Sb1Jta1avkTjKmnJq6fg1IRTjAK4PY+7UkImSxIQ5xZVhqEqJALhFOXp4mmckyS/lmAxNj7yh4PH7tDCYj1dc68cRFz6oUqDQTtLxSlYfWyA69rXLCBrusONsUXDsSkremGydx0Kl6eSaSfs01JYAGcwZQIwbkE4Fi/X8RjqHLPvSsQJkvWVP9zBX74IA7WtUmag/tLvj5UoX5neaEhT13D3NWP7AjEAzmHrVWkNm2dPBlrCvMYJ+sa4gqkj252NsJ3tdNcDxE8TbNhfHkcTQW6hskRM4VXh",
    "swapEstimate": {
@@ -167,6 +169,8 @@ POST /swap/estimate
 }
 
 Response
+
+200 OK
 {
     "transactionId": "81e3520f-bc19-4bbb-9ed4-fefedf9bc9cf"
 }
@@ -224,4 +228,4 @@ sls invoke --function getLiquidityPool --path apiTestData/getLiquidityPool.json
  sls invoke --function submitSwap --path apiTestData/submitSwap.json
 ```
 
-* **Note:** You can append ```--log``` to any request to print logs in the lambda
+**Note:** You can append ```--log``` to any request to print logs in the lambda

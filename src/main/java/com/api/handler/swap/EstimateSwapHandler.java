@@ -68,19 +68,15 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         swapClaimToken.setSwapRequest(swapRequest);
 
         // issue encrypted claim token, based on swapContractId
-        String swapClaimTokenAsString;
-        try {
-            swapClaimTokenAsString = kmsClient.encrypt(swapClaimToken);
-            log.info("swapClaimToken: {}", swapClaimToken);
-        } catch (InvalidInputException e) {
-            log.error(e.getMessage(), e);
-            return ApiGatewayResponse.createBadRequest(e.getMessage(), context);
-        }
+        final String swapClaimTokenAsString = ObjectMapperUtil.toString(swapClaimToken);
+        final String encryptedSwapClaimToken = kmsClient.encrypt(swapClaimTokenAsString);
+        log.info("swapClaimToken: {}", swapClaimToken);
+
 
         // return success response
         EstimateSwapResponse estimateSwapResponse = new EstimateSwapResponse();
         estimateSwapResponse.setSwapEstimate(swapEstimate);
-        estimateSwapResponse.setSwapClaimToken(swapClaimTokenAsString);
+        estimateSwapResponse.setSwapClaimToken(encryptedSwapClaimToken);
         return ApiGatewayResponse.createSuccessResponse(estimateSwapResponse, context);
     }
 

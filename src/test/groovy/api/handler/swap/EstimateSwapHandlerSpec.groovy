@@ -6,6 +6,7 @@ import com.api.handler.swap.EstimateSwapHandler
 import com.api.handler.swap.model.EstimateSwapResponse
 import com.client.dynamodb.DynamoDBClient
 import com.client.kms.KMSClient
+import com.client.kms.token.SwapClaimToken
 import com.config.ErrorMessages
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.logic.MarketMakerLogic
@@ -71,7 +72,11 @@ class EstimateSwapHandlerSpec extends Specification {
         1 * dynamoDBClient.loadLiquidityPool(someValidLiquidityPoolName) >> {
             return liquidityPool
         }
-        1 * kmsClient.encrypt(_) >> {
+        1 * kmsClient.encrypt(_) >> { String swapClaimAsString ->
+            final SwapClaimToken swapClaimToken = objectMapper.readValue(swapClaimAsString, SwapClaimToken.class)
+            assert swapClaimToken.getSwapRequest() == request
+            assert swapClaimToken.getSwapContractId() == someAwsRequestId
+            assert swapClaimToken.getExpiresAt() != null
             return someSwapClaimToken
         }
         1 * marketMakerLogic.createSwapEstimate(liquidityPool, _) >> {

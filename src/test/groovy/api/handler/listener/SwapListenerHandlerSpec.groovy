@@ -5,13 +5,13 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import com.api.handler.listener.SwapListenerHandler
 import com.client.dynamodb.DynamoDBClient
 import com.client.kms.token.SwapClaimToken
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.logic.MarketMakerLogic
 import com.model.LiquidityPool
 import com.model.SwapEstimate
 import com.model.SwapRequest
 import com.model.Transaction
 import com.model.types.TransactionStatus
-import com.util.ObjectMapperUtil
 import org.joda.time.DateTime
 import spock.lang.Specification
 import spock.lang.Subject
@@ -33,6 +33,7 @@ class SwapListenerHandlerSpec extends Specification {
     private SwapClaimToken swapClaim
     private SwapRequest swapRequest
     private String swapClaimAsString
+    private static ObjectMapper objectMapper = new ObjectMapper()
 
     @Subject
     SwapListenerHandler swapRequestListenerHandler
@@ -52,7 +53,7 @@ class SwapListenerHandlerSpec extends Specification {
         swapClaim.setSwapContractId(someValidSwapContractId)
         swapClaim.setSwapRequest(swapRequest)
         swapClaim.setExpiresAt(new DateTime().plusHours(1).toDate())
-        swapClaimAsString = ObjectMapperUtil.toString(swapClaim)
+        swapClaimAsString = objectMapper.writeValueAsString(swapClaim)
 
         sqsEvent = new SQSEvent()
         SQSEvent.SQSMessage sqsMessage = new SQSEvent.SQSMessage()
