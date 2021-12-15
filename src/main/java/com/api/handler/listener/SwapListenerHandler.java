@@ -5,9 +5,9 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
+import com.client.kms.token.SwapClaimToken;
 import com.logic.MarketMakerLogic;
 import com.model.LiquidityPool;
-import com.client.kms.token.SwapClaimToken;
 import com.model.SwapEstimate;
 import com.model.SwapRequest;
 import com.model.Transaction;
@@ -46,9 +46,9 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
             log.info("SQS message body: {}", body);
             swapClaimToken = ObjectMapperUtil.toClass(body, SwapClaimToken.class);
             swapRequest = swapClaimToken.getSwapRequest();
-            final String liquidityPoolName = LiquidityPoolUtil
-                    .getLiquidityPoolName(swapRequest.getAssetNameIn(), swapRequest.getAssetNameOut());
-            liquidityPool = dynamoDBClient.loadLiquidityPool(liquidityPoolName);
+            final String poolName = LiquidityPoolUtil
+                    .getPoolName(swapRequest.getInName(), swapRequest.getOutName());
+            liquidityPool = dynamoDBClient.loadLiquidityPool(poolName);
         } catch (InvalidInputException e) {
             log.error("Message is invalid format. Failed. Deleting.", e);
             return null;
@@ -70,7 +70,7 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
         // construct transactionId as the swapContractId
         transaction.setTransactionId(swapContractId);
         transaction.setTransactionState(TransactionStatus.FINISHED.name());
-        transaction.setSwapEstimate(swapEstimate);
+        transaction.setSwapApplied(swapEstimate);
         transaction.setTimeCompleted(now);
 
         // save the transaction and liquidity pool update

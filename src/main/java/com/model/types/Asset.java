@@ -1,7 +1,9 @@
 package com.model.types;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Possible values for asset.
@@ -27,6 +29,10 @@ public enum Asset {
 
     public static boolean isValidAssetName(final String assetName) {
         return nameToAssetMap.containsKey(assetName);
+    }
+
+    public static List<String> getValidAssetNames() {
+        return nameToAssetMap.values().stream().map(a -> a.name).collect(Collectors.toList());
     }
 
     static {

@@ -1,5 +1,5 @@
 {
   "pathParameters": {
-    "liquidityPoolName": "Apples-Bananas"
+    "poolName": "Apples-Bananas"
   }
 }

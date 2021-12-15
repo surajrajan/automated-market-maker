@@ -6,8 +6,8 @@ import com.api.handler.pool.CreateLiquidityPoolHandler
 import com.api.handler.pool.model.CreateLiquidityPoolRequest
 import com.client.dynamodb.DynamoDBClient
 import com.config.ErrorMessages
-import com.model.AssetAmount
 import com.model.LiquidityPool
+import com.model.PriceAmount
 import com.model.exception.InvalidInputException
 import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
@@ -24,7 +24,7 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
     private APIGatewayProxyRequestEvent requestEvent;
     private Integer someValidSupply = 100
     private Integer someValidPrice = 10
-    private AssetAmount someValidAssetAmount = AssetAmount.builder()
+    private PriceAmount someValidPriceAmount = PriceAmount.builder()
             .amount(someValidSupply)
             .price(someValidPrice)
             .build()
@@ -36,8 +36,8 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
         createLiquidityPoolHandler = new CreateLiquidityPoolHandler();
         createLiquidityPoolHandler.setDynamoDBClient(dynamoDBClient)
         request = new CreateLiquidityPoolRequest()
-        request.setAssetAmountOne(someValidAssetAmount)
-        request.setAssetAmountTwo(someValidAssetAmount)
+        request.setAssetOne(someValidPriceAmount)
+        request.setAssetTwo(someValidPriceAmount)
         requestEvent = TestUtil.createEventRequest(request, someValidLiquidityPoolName)
     }
 
@@ -56,11 +56,11 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
     def "given invalid input (#errorType) should throw bad request"() {
         given:
         CreateLiquidityPoolRequest request = new CreateLiquidityPoolRequest()
-        AssetAmount assetAmountOne = new AssetAmount()
+        PriceAmount assetAmountOne = new PriceAmount()
         assetAmountOne.setPrice(price)
         assetAmountOne.setAmount(supply)
-        request.setAssetAmountOne(assetAmountOne)
-        request.setAssetAmountTwo(someValidAssetAmount)
+        request.setAssetOne(assetAmountOne)
+        request.setAssetTwo(someValidPriceAmount)
         APIGatewayProxyRequestEvent requestEvent = TestUtil.createEventRequest(request, liquidityPoolName)
 
         when:
@@ -87,14 +87,14 @@ class CreateLiquidityHandlerPoolSpec extends Specification {
 
         then:
         dynamoDBClient.createLiquidityPool(_) >> {
-            throw new InvalidInputException(ErrorMessages.LIQUIDITY_POOL_ALREADY_EXISTS);
+            throw new InvalidInputException();
         }
         assert response.getStatusCode() == 400
         assert response.getBody().contains(ErrorMessages.LIQUIDITY_POOL_ALREADY_EXISTS) == true
     }
 
     void assertLiquidityPool(final LiquidityPool liquidityPool) {
-        assert liquidityPool.getLiquidityPoolName() == someValidLiquidityPoolName
+        assert liquidityPool.getPoolName() == someValidLiquidityPoolName
         assert liquidityPool.getAssetOne().getPrice() == someValidPrice
         assert liquidityPool.getAssetTwo().getPrice() == someValidPrice
         assert liquidityPool.getAssetOne().getAmount() == someValidSupply

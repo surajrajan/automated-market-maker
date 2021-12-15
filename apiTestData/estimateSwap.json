@@ -1,3 +1,3 @@
 {
-  "body": "{\"assetNameIn\":\"Apples\",\"assetAmountIn\":7000,\"assetNameOut\":\"Bananas\"}"
+  "body": "{\"inName\":\"Apples\",\"inAmount\":7000,\"outName\":\"Bananas\"}"
 }

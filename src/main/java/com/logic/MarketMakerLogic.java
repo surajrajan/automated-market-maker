@@ -1,7 +1,7 @@
 package com.logic;
 
-import com.model.AssetAmount;
 import com.model.LiquidityPool;
+import com.model.PriceAmount;
 import com.model.SwapEstimate;
 import com.model.SwapRequest;
 import com.util.LiquidityPoolUtil;
@@ -27,29 +27,29 @@ public class MarketMakerLogic {
                                                  @NonNull final LiquidityPool liquidityPool) {
         // create a new pool to return
         final LiquidityPool newLiquidityPool = new LiquidityPool();
-        newLiquidityPool.setLiquidityPoolName(liquidityPool.getLiquidityPoolName());
-        AssetAmount newAssetAmountOne = new AssetAmount();
-        AssetAmount newAssetAmountTwo = new AssetAmount();
+        newLiquidityPool.setPoolName(liquidityPool.getPoolName());
+        PriceAmount newPriceAmountOne = new PriceAmount();
+        PriceAmount newPriceAmountTwo = new PriceAmount();
 
         // create map to access assetName to assetInfo to get details about asset being swapped in / out
-        Map<String, AssetAmount> nameToAssetAmountMap = LiquidityPoolUtil.getAssetNameAssetAmountMap(liquidityPool);
+        Map<String, PriceAmount> nameToAssetAmountMap = LiquidityPoolUtil.getAssetNameToPriceAmountMap(liquidityPool);
         String assetNameOne = nameToAssetAmountMap.entrySet().iterator().next().getKey();
 
         // depending on order, make the swap in amount / supply
         if (swapEstimate.getInName().equals(assetNameOne)) {
-            newAssetAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() + swapEstimate.getInAssetAmount().getAmount());
-            newAssetAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() - swapEstimate.getOutAssetAmount().getAmount());
+            newPriceAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() + swapEstimate.getInPriceAmount().getAmount());
+            newPriceAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() - swapEstimate.getOutPriceAmount().getAmount());
         } else {
-            newAssetAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() - swapEstimate.getInAssetAmount().getAmount());
-            newAssetAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() + swapEstimate.getInAssetAmount().getAmount());
+            newPriceAmountOne.setAmount(liquidityPool.getAssetOne().getAmount() - swapEstimate.getInPriceAmount().getAmount());
+            newPriceAmountTwo.setAmount(liquidityPool.getAssetTwo().getAmount() + swapEstimate.getInPriceAmount().getAmount());
         }
 
         // maintain market cap and calculate the new expected prices
         final Double constantMarketCapOne = liquidityPool.getAssetOne().getAmount() * liquidityPool.getAssetOne().getPrice();
-        newAssetAmountOne.setPrice(constantMarketCapOne / newAssetAmountOne.getAmount());
-        newAssetAmountTwo.setPrice(constantMarketCapOne / newAssetAmountTwo.getAmount());
-        newLiquidityPool.setAssetOne(newAssetAmountOne);
-        newLiquidityPool.setAssetTwo(newAssetAmountTwo);
+        newPriceAmountOne.setPrice(constantMarketCapOne / newPriceAmountOne.getAmount());
+        newPriceAmountTwo.setPrice(constantMarketCapOne / newPriceAmountTwo.getAmount());
+        newLiquidityPool.setAssetOne(newPriceAmountOne);
+        newLiquidityPool.setAssetTwo(newPriceAmountTwo);
         return newLiquidityPool;
     }
 
@@ -63,32 +63,32 @@ public class MarketMakerLogic {
     public SwapEstimate createSwapEstimate(@NonNull final LiquidityPool liquidityPool,
                                            @NonNull final SwapRequest swapRequest) {
         // create map to access assetName to assetInfo to get details about asset being swapped in / out
-        Map<String, AssetAmount> nameToAssetAmountMap = LiquidityPoolUtil.getAssetNameAssetAmountMap(liquidityPool);
-        AssetAmount assetInInfo = nameToAssetAmountMap.get(swapRequest.getAssetNameIn());
-        AssetAmount assetOutInfo = nameToAssetAmountMap.get(swapRequest.getAssetNameOut());
+        Map<String, PriceAmount> nameToAssetAmountMap = LiquidityPoolUtil.getAssetNameToPriceAmountMap(liquidityPool);
+        PriceAmount assetInInfo = nameToAssetAmountMap.get(swapRequest.getInName());
+        PriceAmount assetOutInfo = nameToAssetAmountMap.get(swapRequest.getOutName());
 
         // calculate constant k to maintain
         Double constantMarketCap = assetInInfo.getAmount() * assetInInfo.getPrice();
         Double k = constantMarketCap * constantMarketCap;
 
         // calculate market cap being added
-        Double marketCapBeingSwappedIn = swapRequest.getAssetAmountIn() * assetInInfo.getPrice();
+        Double marketCapBeingSwappedIn = swapRequest.getInAmount() * assetInInfo.getPrice();
         Double newMarketCapIn = constantMarketCap + marketCapBeingSwappedIn;
 
-        // use constant k to determine AssetAmount out
+        // use constant k to determine PriceAmount out
         Double newMarketCapOut = k / newMarketCapIn;
         Double marketCapChange = constantMarketCap - newMarketCapOut;
         Double assetAmountOut = marketCapChange / assetOutInfo.getPrice();
         Double assetOutNewPrice = constantMarketCap / newMarketCapOut * assetOutInfo.getPrice();
 
         SwapEstimate swapEstimate = SwapEstimate.builder()
-                .inName(swapRequest.getAssetNameIn())
-                .inAssetAmount(AssetAmount.builder()
-                        .amount(swapRequest.getAssetAmountIn())
+                .inName(swapRequest.getInName())
+                .inPriceAmount(PriceAmount.builder()
+                        .amount(swapRequest.getInAmount())
                         .price(assetInInfo.getPrice())
                         .build())
-                .outName(swapRequest.getAssetNameOut())
-                .outAssetAmount(AssetAmount.builder()
+                .outName(swapRequest.getOutName())
+                .outPriceAmount(PriceAmount.builder()
                         .amount(assetAmountOut)
                         .price(assetOutNewPrice)
                         .build())

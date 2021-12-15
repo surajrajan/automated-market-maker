@@ -49,7 +49,7 @@ class EstimateSwapHandlerSpec extends Specification {
         estimateSwapHandler.setMarketMakerLogic(marketMakerLogic)
 
         liquidityPool = new LiquidityPool()
-        liquidityPool.setLiquidityPoolName(someValidLiquidityPoolName)
+        liquidityPool.setPoolName(someValidLiquidityPoolName)
 
         swapEstimate = new SwapEstimate()
         context.getAwsRequestId() >> someAwsRequestId
@@ -59,9 +59,9 @@ class EstimateSwapHandlerSpec extends Specification {
     def "given valid request (#type) should return valid swap contract"() {
         given:
         request = new SwapRequest()
-        request.setAssetNameIn(inAsset)
-        request.setAssetNameOut(outAsset)
-        request.setAssetAmountIn(someValidAmountToSwap)
+        request.setInName(inAsset)
+        request.setOutName(outAsset)
+        request.setInAmount(someValidAmountToSwap)
         requestEvent = TestUtil.createEventRequest(request, someValidLiquidityPoolName)
 
         when:
@@ -92,9 +92,9 @@ class EstimateSwapHandlerSpec extends Specification {
     def "given invalid request (#type) should throw bad request"() {
         given:
         request = new SwapRequest()
-        request.setAssetNameIn(inAsset)
-        request.setAssetNameOut(outAsset)
-        request.setAssetAmountIn(amountToSwap)
+        request.setInName(inAsset)
+        request.setOutName(outAsset)
+        request.setInAmount(amountToSwap)
         requestEvent = TestUtil.createEventRequest(request, someValidLiquidityPoolName)
 
         when:

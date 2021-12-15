@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.model.exception.InvalidInputException;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Utility ObjectMapper class to utilize one static reusable instance of object mapper to serialize and deserialize
+ * requests. Also handles error handling and translates any errors into our internal InvalidInputException.
+ */
 @Slf4j
 public final class ObjectMapperUtil {
 

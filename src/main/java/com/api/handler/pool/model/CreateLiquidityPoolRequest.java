@@ -1,10 +1,10 @@
 package com.api.handler.pool.model;
 
-import com.model.AssetAmount;
+import com.model.PriceAmount;
 import lombok.Data;
 
 @Data
 public class CreateLiquidityPoolRequest {
-    private AssetAmount assetAmountOne;
-    private AssetAmount assetAmountTwo;
+    private PriceAmount assetOne;
+    private PriceAmount assetTwo;
 }

@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @DynamoDBDocument
 public class SwapEstimate {
     private String inName;
-    private AssetAmount inAssetAmount;
+    private PriceAmount inPriceAmount;
     private String outName;
-    private AssetAmount outAssetAmount;
+    private PriceAmount outPriceAmount;
 }

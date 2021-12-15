@@ -2,9 +2,9 @@ package com.client.sqs;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.client.kms.token.SwapClaimToken;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.client.kms.token.SwapClaimToken;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 

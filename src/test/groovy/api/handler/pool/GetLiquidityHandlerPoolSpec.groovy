@@ -5,8 +5,8 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
 import com.api.handler.pool.GetLiquidityPoolHandler
 import com.client.dynamodb.DynamoDBClient
 import com.config.ErrorMessages
-import com.model.AssetAmount
 import com.model.LiquidityPool
+import com.model.PriceAmount
 import com.model.exception.InvalidInputException
 import com.serverless.ApiGatewayResponse
 import spock.lang.Specification
@@ -21,9 +21,9 @@ class GetLiquidityHandlerPoolSpec extends Specification {
     private String someValidLiquidityPoolName = "Apples-Bananas"
     private Integer someValidSupply = 100
     private Integer someValidPrice = 10
-    private AssetAmount someValidAssetAmount = new AssetAmount(someValidSupply, someValidPrice)
+    private PriceAmount someValidPriceAmount = new PriceAmount(someValidPrice, someValidSupply)
     private LiquidityPool someValidLiquidityPool = new LiquidityPool(someValidLiquidityPoolName,
-            someValidAssetAmount, someValidAssetAmount)
+            someValidPriceAmount, someValidPriceAmount, new Date(), new Date())
 
     @Subject
     GetLiquidityPoolHandler getLiquidityPoolHandler
@@ -32,7 +32,7 @@ class GetLiquidityHandlerPoolSpec extends Specification {
         getLiquidityPoolHandler = new GetLiquidityPoolHandler()
         getLiquidityPoolHandler.setDynamoDBClient(dynamoDBClient)
         requestEvent = new APIGatewayProxyRequestEvent()
-        requestEvent.setPathParameters(TestUtil.getLiquidityPoolPathParam(someValidLiquidityPoolName))
+        requestEvent.setPathParameters(TestUtil.getPoolNamePathParams(someValidLiquidityPoolName))
     }
 
     def "given key exists should return liquidity pool"() {
@@ -45,6 +45,16 @@ class GetLiquidityHandlerPoolSpec extends Specification {
         }
         assert response.getBody().contains(someValidLiquidityPoolName) == true
         assert response.getStatusCode() == 200
+    }
+
+    def "given unable to extract poolName from path param"() {
+        when:
+        requestEvent.setPathParameters(new HashMap<String, String>())
+        ApiGatewayResponse response = getLiquidityPoolHandler.handleRequest(requestEvent, context)
+
+        then:
+        assert response.getStatusCode() == 400
+        assert response.getBody().contains(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS) == true
     }
 
     def "given db client throws invalid input exception should throw bad request"() {

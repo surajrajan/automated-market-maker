@@ -1,6 +1,6 @@
 {
   "pathParameters": {
-    "liquidityPoolName": "Apples-Bananas"
+    "poolName": "Apples-Bananas"
   },
-  "body": "{\"assetAmountOne\":{\"price\":100,\"amount\":50000},\"assetAmountTwo\":{\"price\":100,\"amount\":50000}}"
+  "body": "{\"assetOne\":{\"price\":100,\"amount\":50000},\"assetTwo\":{\"price\":100,\"amount\":50000}}"
 }

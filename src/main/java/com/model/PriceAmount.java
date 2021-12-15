@@ -15,9 +15,9 @@ import lombok.NonNull;
 @NoArgsConstructor
 @AllArgsConstructor
 @DynamoDBDocument
-public class AssetAmount {
-    @NonNull
-    private Double amount;
+public class PriceAmount {
     @NonNull
     private Double price;
+    @NonNull
+    private Double amount;
 }

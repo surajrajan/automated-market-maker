@@ -8,10 +8,12 @@ import com.api.handler.swap.model.SubmitSwapResponse;
 import com.client.DaggerAppDependencies;
 import com.client.dynamodb.DynamoDBClient;
 import com.client.kms.KMSClient;
+import com.client.kms.token.SwapClaimToken;
 import com.client.sqs.SQSClient;
 import com.config.ErrorMessages;
-import com.client.kms.token.SwapClaimToken;
+import com.model.Transaction;
 import com.model.exception.InvalidInputException;
+import com.model.types.TransactionStatus;
 import com.serverless.ApiGatewayResponse;
 import com.util.ObjectMapperUtil;
 import lombok.Setter;
@@ -58,9 +60,13 @@ public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestE
 
         // set transactionId as unique estimate swapContractId
         String transactionId = swapClaimToken.getSwapContractId();
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(transactionId);
+        transaction.setTransactionState(TransactionStatus.STARTED.name());
+        transaction.setTimeStarted(now);
         try {
-            // write to DB that transactionId has started
-            dynamoDBClient.initializeTransaction(transactionId);
+            // write to DB that transaction has started
+            dynamoDBClient.initializeTransaction(transaction);
         } catch (InvalidInputException e) {
             return ApiGatewayResponse.createBadRequest(ErrorMessages.CLAIM_ALREADY_USED, context);
         }

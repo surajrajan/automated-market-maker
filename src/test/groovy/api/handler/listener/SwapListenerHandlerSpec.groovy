@@ -4,9 +4,9 @@ import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import com.api.handler.listener.SwapListenerHandler
 import com.client.dynamodb.DynamoDBClient
+import com.client.kms.token.SwapClaimToken
 import com.logic.MarketMakerLogic
 import com.model.LiquidityPool
-import com.client.kms.token.SwapClaimToken
 import com.model.SwapEstimate
 import com.model.SwapRequest
 import com.model.Transaction
@@ -44,9 +44,9 @@ class SwapListenerHandlerSpec extends Specification {
 
         liquidityPool = new LiquidityPool()
         swapRequest = new SwapRequest()
-        swapRequest.setAssetNameIn(someValidAssetOne)
-        swapRequest.setAssetNameOut(someValidAssetTwo)
-        swapRequest.setAssetAmountIn(someValidAmountToSwap)
+        swapRequest.setInName(someValidAssetOne)
+        swapRequest.setOutName(someValidAssetTwo)
+        swapRequest.setInAmount(someValidAmountToSwap)
 
         swapClaim = new SwapClaimToken()
         swapClaim.setSwapContractId(someValidSwapContractId)

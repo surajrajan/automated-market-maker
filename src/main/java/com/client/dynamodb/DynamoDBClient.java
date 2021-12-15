@@ -9,7 +9,6 @@ import com.config.ErrorMessages;
 import com.model.LiquidityPool;
 import com.model.Transaction;
 import com.model.exception.InvalidInputException;
-import com.model.types.TransactionStatus;
 import com.util.LiquidityPoolUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +26,7 @@ public class DynamoDBClient {
 
     /**
      * Configures the ability to skip null attributes when making an update. Ex - when an item is updated
-     * a second time, and only some fields need to be updated (ignoring existing fields).
+     * a second time, and only some fields need to be updated (ignoring existing fields, such as created time).
      */
     private static DynamoDBMapperConfig SKIP_NULL_ATTRS_WRITE_CONFIG = DynamoDBMapperConfig.builder()
             .withSaveBehavior(DynamoDBMapperConfig.SaveBehavior.UPDATE_SKIP_NULL_ATTRIBUTES).build();
@@ -61,8 +60,8 @@ public class DynamoDBClient {
             log.info("Creating liquidity pool: {}", liquidityPool);
             dynamoDBMapper.save(liquidityPool, FAIL_ON_EXISTING_LIQUIDITY_POOL);
         } catch (ConditionalCheckFailedException e) {
-            log.error("Liquidity pool already exists.");
-            throw new InvalidInputException(ErrorMessages.LIQUIDITY_POOL_ALREADY_EXISTS, e);
+            log.error("Liquidity pool already exists", e);
+            throw new InvalidInputException(e);
         }
     }
 
@@ -77,32 +76,34 @@ public class DynamoDBClient {
         log.info("Getting liquidity pool with name: {}", liquidityPoolName);
         LiquidityPool liquidityPool = dynamoDBMapper.load(LiquidityPool.class, liquidityPoolName);
         log.info("Returned: {}", liquidityPool);
-        LiquidityPoolUtil.logKValue(liquidityPool);
+        LiquidityPoolUtil.logStats(liquidityPool);
         if (liquidityPool == null) {
-            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME + "- " + liquidityPoolName);
+            throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME + " - " + liquidityPoolName);
         }
         return liquidityPool;
     }
 
-    public void initializeTransaction(final String transactionId) throws InvalidInputException {
+    /**
+     * Creates a Transaction entry. Fails if transactionId already exists.
+     *
+     * @param transaction
+     * @throws InvalidInputException if the transactionId already exists.
+     */
+    public void initializeTransaction(final Transaction transaction) throws InvalidInputException {
         try {
-            log.info("Initializing transaction: {}", transactionId);
-            final Transaction transaction = new Transaction();
-            transaction.setTransactionId(transactionId);
-            transaction.setTransactionState(TransactionStatus.STARTED.name());
-            Date now = new Date();
-            transaction.setTimeStarted(now);
+            log.info("Initializing transaction: {}", transaction);
             dynamoDBMapper.save(transaction, FAIL_ON_EXISTING_TRANSACTION);
         } catch (ConditionalCheckFailedException e) {
-            log.error("Claim already used.");
+            log.error("TransactionId already exists", e);
             throw new InvalidInputException(e);
         }
     }
 
     public void writeTransactionAndUpdateLiquidityPool(final Transaction transaction,
                                                        final LiquidityPool newLiquidityPool) {
-        // when a transaction is updated, some initial parameters may not be included on update (ex - create timestamp)
+        // use skip null attrs setting to prevent overwriting of fields that are left blank
+        newLiquidityPool.setUpdatedTime(new Date());
         dynamoDBMapper.save(transaction, SKIP_NULL_ATTRS_WRITE_CONFIG);
-        dynamoDBMapper.save(newLiquidityPool);
+        dynamoDBMapper.save(newLiquidityPool, SKIP_NULL_ATTRS_WRITE_CONFIG);
     }
 }

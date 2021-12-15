@@ -39,7 +39,7 @@ functions:
     handler: com.api.handler.pool.CreateLiquidityPoolHandler
     events:
       - http:
-          path: /pool/{liquidityPoolName}
+          path: /pool/{poolName}
           method: post
 
   # Gets a liquidity pool
@@ -47,7 +47,7 @@ functions:
     handler: com.api.handler.pool.GetLiquidityPoolHandler
     events:
       - http:
-          path: /pool/{liquidityPoolName}
+          path: /pool/{poolName}
           method: get
 
   # Estimates a swap
@@ -90,10 +90,10 @@ resources:
       Properties:
         TableName: AutomatedMarketMaker-dev-LiquidityPools
         AttributeDefinitions:
-          - AttributeName: liquidityPoolName
+          - AttributeName: poolName
             AttributeType: S
         KeySchema:
-          - AttributeName: liquidityPoolName
+          - AttributeName: poolName
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 1

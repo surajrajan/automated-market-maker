@@ -12,7 +12,7 @@ public final class TestUtil {
     private static ObjectMapper objectMapper = new ObjectMapper();
 
     public static APIGatewayProxyRequestEvent createEventRequest(final Object request,
-                                                                 final String liquidityPoolName) {
+                                                                 final String poolName) {
         APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
         String body = null;
         try {
@@ -21,7 +21,7 @@ public final class TestUtil {
             throw new RuntimeException(e);
         }
         requestEvent.setBody(body);
-        requestEvent.setPathParameters(getLiquidityPoolPathParam(liquidityPoolName));
+        requestEvent.setPathParameters(getPoolNamePathParams(poolName));
         return requestEvent;
     }
 
@@ -37,9 +37,9 @@ public final class TestUtil {
         return requestEvent;
     }
 
-    public static Map<String, String> getLiquidityPoolPathParam(final String liquidityPoolName) {
+    public static Map<String, String> getPoolNamePathParams(final String poolName) {
         Map<String, String> pathParameters = new HashMap<>();
-        pathParameters.put("liquidityPoolName", liquidityPoolName);
+        pathParameters.put("poolName", poolName);
         return pathParameters;
     }
 }

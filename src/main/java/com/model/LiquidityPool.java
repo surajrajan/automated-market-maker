@@ -9,9 +9,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 /**
  * Data about a liquidity pool between two assets. Contains the name in alphabetical order (ex - Apples-Bananas) and the
- * AssetAmount of each asset.
+ * PriceAmount of each asset.
  */
 @Builder
 @NoArgsConstructor
@@ -22,8 +24,11 @@ import lombok.NoArgsConstructor;
 public class LiquidityPool {
 
     @DynamoDBHashKey(attributeName = DBConstants.LIQUIDITY_POOL_NAME_KEY)
-    private String liquidityPoolName;
+    private String poolName;
 
-    private AssetAmount assetOne;
-    private AssetAmount assetTwo;
+    private PriceAmount assetOne;
+    private PriceAmount assetTwo;
+
+    private Date createdTime;
+    private Date updatedTime;
 }

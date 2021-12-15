@@ -1,42 +1,56 @@
 package com.util;
 
 import com.config.ErrorMessages;
-import com.model.AssetAmount;
 import com.model.LiquidityPool;
+import com.model.PriceAmount;
 import com.model.SwapRequest;
 import com.model.exception.InvalidInputException;
 import com.model.types.Asset;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * Utility class for various operations on LiquidityPool and names.
+ */
 @Slf4j
 public final class LiquidityPoolUtil {
 
-    public static Map<String, AssetAmount> getAssetNameAssetAmountMap(final LiquidityPool liquidityPool) {
-        final String assetNames[] = liquidityPool.getLiquidityPoolName().split("-");
+    /**
+     * Builds a map of the asset name to PriceAmount based on the LiquidityPool object.
+     *
+     * @param liquidityPool
+     * @return Map<String, PriceAmount>
+     */
+    public static Map<String, PriceAmount> getAssetNameToPriceAmountMap(@NonNull final LiquidityPool liquidityPool) {
+        final String assetNames[] = liquidityPool.getPoolName().split("-");
         final String assetNameOne = assetNames[0];
         final String assetNameTwo = assetNames[1];
-        final AssetAmount assetAmountOne = AssetAmount.builder()
+        final PriceAmount priceAmountOne = PriceAmount.builder()
                 .amount(liquidityPool.getAssetOne().getAmount())
                 .price(liquidityPool.getAssetOne().getPrice())
                 .build();
-        final AssetAmount assetAmountTwo = AssetAmount.builder()
+        final PriceAmount priceAmountTwo = PriceAmount.builder()
                 .amount(liquidityPool.getAssetTwo().getAmount())
                 .price(liquidityPool.getAssetTwo().getPrice())
                 .build();
-
         // ordered map
-        Map<String, AssetAmount> nameToAssetAmountMap = new TreeMap<>();
-        nameToAssetAmountMap.put(assetNameOne, assetAmountOne);
-        nameToAssetAmountMap.put(assetNameTwo, assetAmountTwo);
-
+        Map<String, PriceAmount> nameToAssetAmountMap = new TreeMap<>();
+        nameToAssetAmountMap.put(assetNameOne, priceAmountOne);
+        nameToAssetAmountMap.put(assetNameTwo, priceAmountTwo);
         return nameToAssetAmountMap;
     }
 
-    public static String getLiquidityPoolName(final String assetNameOne, final String assetNameTwo) {
+    /**
+     * Builds the liquidity pool name from two asset names, ordering them alphabetically.
+     *
+     * @param assetNameOne
+     * @param assetNameTwo
+     */
+    public static String getPoolName(@NonNull final String assetNameOne, @NonNull final String assetNameTwo) {
         int compare = assetNameOne.compareTo(assetNameTwo);
         if (compare < 0) {
             return MessageFormat.format("{0}-{1}", assetNameOne, assetNameTwo);
@@ -47,34 +61,30 @@ public final class LiquidityPoolUtil {
         }
     }
 
-    public static void logKValue(final LiquidityPool liquidityPool) {
+    /**
+     * Logs stats about the liquidity pool.
+     *
+     * @param liquidityPool
+     */
+    public static void logStats(@NonNull final LiquidityPool liquidityPool) {
         // calculate stats for asset one and asset two
-        final AssetAmount assetAmountOne = liquidityPool.getAssetOne();
-        final AssetAmount assetAmountTwo = liquidityPool.getAssetTwo();
-        final Double constantMarketCapOne = assetAmountOne.getAmount() * assetAmountOne.getPrice();
-        final Double constantMarketCapTwo = assetAmountTwo.getAmount() * assetAmountTwo.getPrice();
+        final PriceAmount priceAmountOne = liquidityPool.getAssetOne();
+        final PriceAmount priceAmountTwo = liquidityPool.getAssetTwo();
+        final Double constantMarketCapOne = priceAmountOne.getAmount() * priceAmountOne.getPrice();
+        final Double constantMarketCapTwo = priceAmountTwo.getAmount() * priceAmountTwo.getPrice();
         final Double k = constantMarketCapOne * constantMarketCapOne;
         log.info("constantMarketCapOne: {}, constantMarketCapOne: {}, k: {}",
                 constantMarketCapOne, constantMarketCapTwo, k);
     }
 
-
-    public static String extractLiquidityPoolNameFromPathParams(final Map<String, String> pathParameters)
-            throws InvalidInputException {
-        if (pathParameters == null) {
-            throw new InvalidInputException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
-        }
-        String liquidityPoolName = pathParameters.get("liquidityPoolName");
-        if (liquidityPoolName == null || liquidityPoolName.isEmpty()) {
-            throw new InvalidInputException(ErrorMessages.INVALID_REQUEST_MISSING_FIELDS);
-        }
-        validateLiquidityPoolName(liquidityPoolName);
-        return liquidityPoolName;
-    }
-
-    public static String inferLiquidityPoolFromSwapRequest(final SwapRequest swapRequest) {
-        String assetIn = swapRequest.getAssetNameIn();
-        String assetOut = swapRequest.getAssetNameOut();
+    /**
+     * Infers the liquidity pool name from in / out asset names in the swap request, ordering them alphabetically.
+     *
+     * @param swapRequest
+     */
+    public static String inferPoolNameFromSwapRequest(@NonNull final SwapRequest swapRequest) {
+        String assetIn = swapRequest.getInName();
+        String assetOut = swapRequest.getOutName();
         int compare = assetIn.compareTo(assetOut);
         if (compare < 0) {
             return MessageFormat.format("{0}-{1}", assetIn, assetOut);
@@ -82,7 +92,13 @@ public final class LiquidityPoolUtil {
         return MessageFormat.format("{0}-{1}", assetOut, assetIn);
     }
 
-    private static void validateLiquidityPoolName(final String liquidityPoolName) throws InvalidInputException {
+    /**
+     * Validates that a liquidity pool name has correct asset names.
+     *
+     * @param liquidityPoolName
+     * @throws InvalidInputException
+     */
+    public static void validateLiquidityPoolName(@NonNull final String liquidityPoolName) throws InvalidInputException {
         String assetNames[] = liquidityPoolName.split("-");
         if (assetNames.length != 2) {
             throw new InvalidInputException(ErrorMessages.INVALID_LIQUIDITY_POOL_NAME);

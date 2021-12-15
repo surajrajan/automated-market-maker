@@ -6,11 +6,13 @@ import com.api.handler.swap.SubmitSwapHandler
 import com.api.handler.swap.model.SubmitSwapRequest
 import com.client.dynamodb.DynamoDBClient
 import com.client.kms.KMSClient
+import com.client.kms.token.SwapClaimToken
 import com.client.sqs.SQSClient
 import com.config.ErrorMessages
-import com.client.kms.token.SwapClaimToken
 import com.model.SwapRequest
+import com.model.Transaction
 import com.model.exception.InvalidInputException
+import com.model.types.TransactionStatus
 import com.serverless.ApiGatewayResponse
 import org.joda.time.DateTime
 import spock.lang.Specification
@@ -62,7 +64,12 @@ class SubmitSwapHandlerSpec extends Specification {
             return swapClaimToken
         }
 
-        1 * dynamoDBClient.initializeTransaction(someSwapContractId)
+        1 * dynamoDBClient.initializeTransaction(_) >> { Transaction transaction ->
+            assert transaction.getTransactionId() == someSwapContractId
+            assert transaction.getTransactionState() == TransactionStatus.STARTED.name()
+            assert transaction.getTimeStarted() != null
+            assert transaction.getTimeCompleted() == null
+        }
         1 * sqsClient.submitSwap(_) >> { SwapClaimToken swapClaim ->
             assert swapClaim.getSwapContractId() == someSwapContractId
         }
