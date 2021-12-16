@@ -58,6 +58,7 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
                     .getPoolName(swapRequest.getInName(), swapRequest.getOutName());
             liquidityPool = dynamoDBClient.loadLiquidityPool(poolName);
         } catch (Exception e) {
+            // something is wrong with message / not able to load liquidity pool details. ignore.
             log.error("Message is invalid format. Ignoring message and processing / deleting.", e);
             return null;
         }
@@ -71,10 +72,9 @@ public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
         final SwapEstimate swapEstimate = marketMakerLogic.createSwapEstimate(liquidityPool, swapRequest);
         final LiquidityPool newLiquidityPool = marketMakerLogic.applySwapEstimateToPool(swapEstimate, liquidityPool);
 
-        // construct the transaction, containing before and after details of the liquidity pool
+        // construct the transaction
         final Transaction transaction = new Transaction();
         Date now = new Date();
-
         // construct transactionId as the swapContractId
         transaction.setTransactionId(swapContractId);
         transaction.setTransactionState(TransactionStatus.FINISHED.name());
