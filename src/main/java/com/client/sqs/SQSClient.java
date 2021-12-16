@@ -24,7 +24,7 @@ public class SQSClient {
     /**
      * Submits a SwapRequest to the SQS queue.
      *
-     * @param swapRequest
+     * @param messageBody
      */
     public void submitMessage(final String messageBody) {
         log.info("Submitting message to SQS: {}", messageBody);

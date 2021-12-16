@@ -17,7 +17,6 @@ a set APIs (each backed by a Lambda function), that interact with DynamoDB, SQS,
 
 * Model Definitions are in ```com.model```
 * Client facing APIs are documented in ```com.api.handle```
-* API request examples discussed below are in ```apiTestData``` folder to use
 
 ## Client Facing APIs
 
@@ -179,11 +178,6 @@ Response
 
 ## FAQ
 
-### How does the AMM submit prices?
-
-**Note:** In a real AMM, users would have the ability to set a *slippage* parameter that prevents actual swap to be too
-far off from the initial estimate.
-
 ### How does the AMM maintain prices?
 One standard way an AMM calculates price action is using the **constant product formula** - Whenever a
 trade (swap of assets) is made in the pool, the market maker will **maintain a constant k-value**, which is calculated by:
@@ -191,6 +185,15 @@ trade (swap of assets) is made in the pool, the market maker will **maintain a c
 k = marketCapAssetOne * marketCapAssetTwo
 ```
 While maintaining this value, the AMM can set before / after prices. The logic for this algorithm is contained in `com.logic.MarketMakerLogic`.
+
+### How does the AMM submit swaps?
+When a swap is submitted, it is put into the SQS queue. The swap request is then read from the queue in real time and
+the swap updates are commited.
+
+### Why is it possible that the SwapEstimate is different at processing time vs estimate time? 
+In low traffic situation, the actual swap will be the same as the estimate. In a real AMM, users would have the ability
+to set a *slippage* parameter that prevents actual swap to be too far off from the initial estimate during submission time.
+This could be an added feature / parameter to the SubmitSwap API.
 
 ## Project Setup
 **Pre-Requisites**
@@ -206,7 +209,9 @@ While maintaining this value, the AMM can set before / after prices. The logic f
 * **Note:** currently supports only ```dev``` stage - configure as necessary in ```serverless.yml```
 
 ## Examples
-It's easiest to understand the project while interfacing with each of the APIs individually.
+It's easiest to understand the project while interfacing with each of the APIs individually. Each of the above examples
+are in the ```apiTestData``` folder to use via the below commands.
+
 ```
 sls invoke --function createLiquidityPool --path apiTestData/createLiquidityPool.json
 ```
@@ -228,4 +233,4 @@ sls invoke --function getLiquidityPool --path apiTestData/getLiquidityPool.json
  sls invoke --function submitSwap --path apiTestData/submitSwap.json
 ```
 
-**Note:** You can append ```--log``` to any request to print logs in the lambda
+**Note:** You can append ```--log``` to any request to print logs in the Lambda
