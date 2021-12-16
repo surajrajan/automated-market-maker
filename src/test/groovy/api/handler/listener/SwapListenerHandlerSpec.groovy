@@ -12,6 +12,7 @@ import com.model.SwapEstimate
 import com.model.SwapRequest
 import com.model.Transaction
 import com.model.types.TransactionStatus
+import com.util.ObjectMapperUtil
 import org.joda.time.DateTime
 import spock.lang.Specification
 import spock.lang.Subject
@@ -33,7 +34,6 @@ class SwapListenerHandlerSpec extends Specification {
     private SwapClaimToken swapClaim
     private SwapRequest swapRequest
     private String swapClaimAsString
-    private static ObjectMapper objectMapper = new ObjectMapper()
 
     @Subject
     SwapListenerHandler swapRequestListenerHandler
@@ -98,7 +98,7 @@ class SwapListenerHandlerSpec extends Specification {
         swapClaim.setSwapContractId(someValidSwapContractId)
         swapClaim.setSwapRequest(swapRequest)
         swapClaim.setExpiresAt(new DateTime().plusHours(1).toDate())
-        swapClaimAsString = objectMapper.writeValueAsString(swapClaim)
+        swapClaimAsString = ObjectMapperUtil.toString(swapClaim)
 
         SQSEvent sqsEvent = new SQSEvent()
         SQSEvent.SQSMessage sqsMessage = new SQSEvent.SQSMessage()

@@ -14,6 +14,7 @@ import com.logic.MarketMakerLogic
 import com.model.LiquidityPool
 import com.model.SwapEstimate
 import com.model.SwapRequest
+import com.util.ObjectMapperUtil
 import spock.lang.Specification
 import spock.lang.Subject
 import spock.lang.Unroll
@@ -32,8 +33,6 @@ class EstimateSwapHandlerSpec extends Specification {
     def dynamoDBClient = Mock(DynamoDBClient)
     def kmsClient = Mock(KMSClient)
     def marketMakerLogic = Mock(MarketMakerLogic)
-
-    private ObjectMapper objectMapper = new ObjectMapper()
 
     @Subject
     EstimateSwapHandler EstimateSwapHandler
@@ -73,7 +72,7 @@ class EstimateSwapHandlerSpec extends Specification {
             return liquidityPool
         }
         1 * kmsClient.encrypt(_) >> { String swapClaimAsString ->
-            final SwapClaimToken swapClaimToken = objectMapper.readValue(swapClaimAsString, SwapClaimToken.class)
+            final SwapClaimToken swapClaimToken = ObjectMapperUtil.toClass(swapClaimAsString, SwapClaimToken.class)
             assert swapClaimToken.getSwapRequest() == request
             assert swapClaimToken.getSwapContractId() == someAwsRequestId
             assert swapClaimToken.getExpiresAt() != null
@@ -84,7 +83,7 @@ class EstimateSwapHandlerSpec extends Specification {
         }
         assert response.getStatusCode() == 200
         final EstimateSwapResponse estimateSwapResponse
-                = objectMapper.readValue(response.getBody(), EstimateSwapResponse.class)
+                = ObjectMapperUtil.toClass(response.getBody(), EstimateSwapResponse.class)
         assert estimateSwapResponse.getSwapEstimate() == swapEstimate
         assert estimateSwapResponse.getSwapClaimToken() == someSwapClaimToken
 

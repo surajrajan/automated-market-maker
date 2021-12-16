@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Possible values for asset.
+ * Possible values for Asset.
  */
 public enum Asset {
     APPLES("Apples"),

@@ -15,6 +15,9 @@ import javax.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+/**
+ * Client to decrypt / encrypt. Uses a single symmetric key provided.
+ */
 @Slf4j
 @AllArgsConstructor
 @Singleton

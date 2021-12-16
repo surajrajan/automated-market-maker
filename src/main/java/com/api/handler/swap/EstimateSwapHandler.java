@@ -82,7 +82,6 @@ public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyReques
         final String encryptedSwapClaimToken = kmsClient.encrypt(swapClaimTokenAsString);
         log.info("swapClaimToken: {}", swapClaimToken);
 
-
         // return success response
         EstimateSwapResponse estimateSwapResponse = new EstimateSwapResponse();
         estimateSwapResponse.setSwapEstimate(swapEstimate);
