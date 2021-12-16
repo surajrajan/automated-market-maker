@@ -23,6 +23,17 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Date;
 
+/**
+ * Handler for SubmitSwap API.
+ * Requires a SwapRequest body containing a swapClaimToken. This then:
+ * 1. Decrypts the token using KMS client, and deserializes the token contents into the SwapClaimToken object
+ * 2. Ensure that the token is not expired
+ * 3. Create an entry in DynamoDB Transactions table, indicating that this transaction has "started" and that this
+ *    claim has been "consumed". The transaction is keyed based off the id in the token. If the id already exists, this
+ *    API will fail claiming the token has already been used.
+ * 4. The SwapClaimToken details are submitted to an SQS queue to be processed.
+ * 5. The transactionId is returned to the client.
+ */
 @Slf4j
 @Setter
 public class SubmitSwapHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {

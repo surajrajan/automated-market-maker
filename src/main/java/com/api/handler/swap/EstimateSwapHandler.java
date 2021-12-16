@@ -26,6 +26,15 @@ import org.joda.time.DateTime;
 
 import java.util.Date;
 
+/**
+ * Handler for EstimateSwap API.
+ * Requires an underlying LiquidityPool to exist already.
+ * Requires a SwapRequest body containing request details. Returns an object containing:
+ * 1. A calculated SwapEstimate, based on the LiquidityPool price / supply details.
+ * 2. A swapClaimToken String, which is a one-time claim use token to execute the SwapRequest using the SubmitSwap API.
+ *    The token is an encrypted version (using KMS key) of the swap details. Every token has a uniqueId associated with
+ *    it, which is the uniqueAwsRequestId. This is used to prevent a single token from being consumed multiple times.
+ */
 @Slf4j
 @Setter
 public class EstimateSwapHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {

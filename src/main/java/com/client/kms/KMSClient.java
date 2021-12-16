@@ -31,7 +31,6 @@ public class KMSClient {
     }
 
     public SwapClaimToken decrypt(final String inputText) throws InvalidInputException {
-        final SwapClaimToken swapClaimToken;
         try {
             final byte[] cipherText = Base64.getDecoder().decode(inputText);
             final CryptoResult<byte[], KmsMasterKey> decryptResult = awsCrypto.decryptData(this.keyProvider, cipherText);

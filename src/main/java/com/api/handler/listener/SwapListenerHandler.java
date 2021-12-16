@@ -19,6 +19,15 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Date;
 
+/**
+ * Handler to listen to the SQS queue for swaps. The messages in this queue are of object SwapClaimToken, which contains
+ * the original SwapRequest and transactionId. The logic is as follows:
+ * 1. Deserialize the SQS message into the SwapClaimToken object and load the LiquidityPool details. If there are
+ *    any issues with this step, the message is discarded, as that implies that the message in the queue was not put
+ *    using the SubmitSwap API.
+ * 2. Generate a **new** SwapEstimate and LiquidityPool after-state for the current time.
+ * 3. Update both the associated Transaction to complete and LiquidityPool details in DynamoDB.
+ */
 @Slf4j
 @Setter
 public class SwapListenerHandler implements RequestHandler<SQSEvent, Void> {
